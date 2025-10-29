@@ -4,6 +4,7 @@ import "./globals.css";
 import AuthPanel from "@/components/AuthPanel";
 import AuthUrlCleaner from "@/components/AuthUrlCleaner";
 import Link from "next/link";
+import { Suspense } from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,7 +31,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthUrlCleaner />
+        <Suspense fallback={null}>
+          <AuthUrlCleaner />
+        </Suspense>
         <header className="w-full border-b border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-black/70 backdrop-blur">
           <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-6">
             <Link href="/" className="text-sm font-medium text-zinc-800 dark:text-zinc-100">
