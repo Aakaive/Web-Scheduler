@@ -90,7 +90,6 @@ export default function AuthPanel() {
         const { error: upsertError } = await supabase
           .from('users')
           .upsert({ id: authUser.id, email: authUser.email }, { onConflict: 'id' })
-          .select('id', { head: true }) // 최소 응답
 
         if (upsertError) {
           console.error('Failed to upsert user row:', upsertError)
