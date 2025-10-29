@@ -18,7 +18,7 @@ export const getUserData = async () => {
   console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
   
   const { data, error } = await supabase
-    .from('user')
+    .from('users')
     .select('*')
     .order('created_at', { ascending: false })
 
@@ -35,7 +35,7 @@ export const getUserData = async () => {
 
 export const getUserById = async (id: string) => {
   const { data, error } = await supabase
-    .from('user')
+    .from('users')
     .select('*')
     .eq('id', id)
     .single()
