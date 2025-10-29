@@ -14,12 +14,9 @@ export default function AuthPanel() {
   const [signingOut, setSigningOut] = useState(false)
   const ensuredRef = useRef(false)
   const router = useRouter()
-<<<<<<< HEAD
-=======
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ??
     (typeof window !== 'undefined' ? window.location.origin : undefined)
->>>>>>> 00840ca (fix : 로그아웃 시 url에 토큰 표시되는 문제 해결)
 
   const cleanAuthParamsFromUrl = () => {
     if (typeof window === 'undefined') return
@@ -27,21 +24,13 @@ export default function AuthPanel() {
     const hasHash = !!window.location.hash
     if (!hasSearch && !hasHash) return
 
-<<<<<<< HEAD
-    // 1) querystring 정리
-=======
->>>>>>> 00840ca (fix : 로그아웃 시 url에 토큰 표시되는 문제 해결)
     if (hasSearch) {
       const url = new URL(window.location.href)
       url.searchParams.delete('access_token')
       url.searchParams.delete('refresh_token')
-<<<<<<< HEAD
-      url.searchParams.delete('expires_in')
-=======
       url.searchParams.delete('provider_token')
       url.searchParams.delete('expires_in')
       url.searchParams.delete('expires_at')
->>>>>>> 00840ca (fix : 로그아웃 시 url에 토큰 표시되는 문제 해결)
       url.searchParams.delete('token_type')
       url.searchParams.delete('provider')
       url.searchParams.delete('error')
@@ -51,29 +40,24 @@ export default function AuthPanel() {
       window.history.replaceState(null, '', base)
     }
 
-<<<<<<< HEAD
-    // 2) hash(#) 정리: 예) #access_token=... 형식
-=======
->>>>>>> 00840ca (fix : 로그아웃 시 url에 토큰 표시되는 문제 해결)
     if (hasHash) {
       const hash = window.location.hash.replace(/^#/, '')
       if (hash) {
         const params = new URLSearchParams(hash)
         params.delete('access_token')
         params.delete('refresh_token')
-<<<<<<< HEAD
-        params.delete('expires_in')
-=======
         params.delete('provider_token')
         params.delete('expires_in')
         params.delete('expires_at')
->>>>>>> 00840ca (fix : 로그아웃 시 url에 토큰 표시되는 문제 해결)
         params.delete('token_type')
         params.delete('provider')
         params.delete('error')
         params.delete('code')
         const newHash = params.toString()
-        const base = window.location.pathname + (window.location.search || '') + (newHash ? `#${newHash}` : '')
+        const base =
+          window.location.pathname +
+          (window.location.search || '') +
+          (newHash ? `#${newHash}` : '')
         window.history.replaceState(null, '', base)
       }
     }
@@ -93,10 +77,6 @@ export default function AuthPanel() {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       const u = session?.user ?? null
       setUser(u ? { email: u.email ?? null } : null)
-<<<<<<< HEAD
-      // 인증 상태 변동 시에도 URL 정리
-=======
->>>>>>> 00840ca (fix : 로그아웃 시 url에 토큰 표시되는 문제 해결)
       cleanAuthParamsFromUrl()
     })
 
@@ -113,10 +93,6 @@ export default function AuthPanel() {
         const authUser = auth.user
         if (!authUser?.id || !authUser.email) return
 
-<<<<<<< HEAD
-        // id 기준 upsert → 이미 있으면 갱신 없이 통과, 없으면 생성
-=======
->>>>>>> 00840ca (fix : 로그아웃 시 url에 토큰 표시되는 문제 해결)
         const { error: upsertError } = await supabase
           .from('users')
           .upsert({ id: authUser.id, email: authUser.email }, { onConflict: 'id' })
@@ -139,11 +115,7 @@ export default function AuthPanel() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-<<<<<<< HEAD
-        redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
-=======
         redirectTo: siteUrl,
->>>>>>> 00840ca (fix : 로그아웃 시 url에 토큰 표시되는 문제 해결)
         queryParams: {
           prompt: 'select_account'
         }
@@ -157,25 +129,7 @@ export default function AuthPanel() {
       await supabase.auth.signOut()
       setUser(null)
       ensuredRef.current = false
-<<<<<<< HEAD
-      // 인증 파라미터 쿼리스트링 제거
-      if (typeof window !== 'undefined' && window.location.search) {
-        const url = new URL(window.location.href)
-        url.searchParams.delete('access_token')
-        url.searchParams.delete('refresh_token')
-        url.searchParams.delete('expires_in')
-        url.searchParams.delete('token_type')
-        // 불필요한 파라미터가 모두 지워지면 쿼리스트링 자체를 제거
-        if (!Array.from(url.searchParams.keys()).length) {
-          window.history.replaceState(null, '', url.pathname)
-        } else {
-          window.history.replaceState(null, '', url.pathname + '?' + url.searchParams.toString())
-        }
-      }
-=======
-      // URL 토큰 파라미터 정리
       cleanAuthParamsFromUrl()
->>>>>>> 00840ca (fix : 로그아웃 시 url에 토큰 표시되는 문제 해결)
       router.refresh()
     } finally {
       setSigningOut(false)
@@ -208,5 +162,3 @@ export default function AuthPanel() {
     </div>
   )
 }
-
-

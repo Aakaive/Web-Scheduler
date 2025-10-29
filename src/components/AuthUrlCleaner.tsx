@@ -31,7 +31,8 @@ export default function AuthUrlCleaner() {
         }
       })
       if (changed) {
-        const base = url.origin + url.pathname + (url.searchParams.toString() ? `?${url.searchParams.toString()}` : '')
+        const qs = url.searchParams.toString()
+        const base = url.origin + url.pathname + (qs ? `?${qs}` : '')
         window.history.replaceState(null, '', base)
       }
     }
@@ -71,5 +72,3 @@ export default function AuthUrlCleaner() {
 
   return null
 }
-
-
