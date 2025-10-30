@@ -3,12 +3,36 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import Image from "next/image";
 
 interface Workspace {
   id: string // int8 comes back as string in JS
   user_id: string
   title: string
   created_at: string
+}
+
+// 이미지 아이콘 로드 실패 시 인라인 SVG로 대체하는 컴포넌트
+function EditNoteIcon() {
+  return (
+    <svg
+      className="w-[17px] h-[17px] text-gray-400 hover:text-black transition-colors"
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <path
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="m14.304 4.844 2.852 2.852M7 7H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-4.5m2.409-9.91a2.017 2.017 0 0 1 0 2.853l-6.844 6.844L8 14l.713-3.565 6.844-6.844a2.015 2.015 0 0 1 2.852 0Z"
+      />
+    </svg>
+  )
 }
 
 export default function WorkspaceList() {
@@ -19,6 +43,10 @@ export default function WorkspaceList() {
   const [error, setError] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  // 추가: 상태 for editing
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingTitle, setEditingTitle] = useState<string>("")
+  const [updating, setUpdating] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -78,6 +106,27 @@ export default function WorkspaceList() {
     }
   }
 
+  // 저장 처리 함수
+  const handleSaveEdit = async (wsId: string) => {
+    if (!userId || !editingTitle.trim()) return
+    try {
+      setUpdating(true)
+      const { error: err } = await supabase
+        .from('workspaces')
+        .update({ title: editingTitle.trim() })
+        .eq('id', wsId)
+        .eq('user_id', userId)
+      if (err) throw err
+      setWorkspaces(prev => prev.map(w => w.id === wsId ? { ...w, title: editingTitle.trim() } : w))
+      setEditingId(null)
+      setEditingTitle("")
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '이름 변경에 실패했어요')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
   const content = useMemo(() => {
     if (!userId) {
       return (
@@ -104,49 +153,113 @@ export default function WorkspaceList() {
         {workspaces.map(ws => (
           <li key={ws.id} className="px-4 py-3 flex items-center justify-between hover:bg-zinc-50 dark:hover:bg-zinc-800">
             <div 
-              className="flex-1 cursor-pointer"
-              onClick={() => router.push(`/workspace/${ws.id}`)}
+              className="flex-1 cursor-pointer flex items-center gap-2"
+              onClick={() => editingId ? undefined : router.push(`/workspace/${ws.id}`)}
             >
-              <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{ws.title}</div>
-              <div className="text-xs text-zinc-500 dark:text-zinc-400">{new Date(ws.created_at).toLocaleString('ko-KR')}</div>
-            </div>
-            <button
-              onClick={async (e) => {
-                e.stopPropagation() // 클릭 이벤트가 부모로 전파되지 않도록 방지
-                if (!userId || deletingId) return
-                const ok = window.confirm('워크스페이스를 삭제하시겠습니까?')
-                if (!ok) return
-                try {
-                  setDeletingId(ws.id)
-                  const { error: err } = await supabase
-                    .from('workspaces')
-                    .delete()
-                    .eq('id', ws.id)
-                    .eq('user_id', userId)
-                  if (err) throw err
-                  setWorkspaces(prev => prev.filter(w => w.id !== ws.id))
-                } catch (e) {
-                  setError(e instanceof Error ? e.message : '삭제에 실패했어요')
-                } finally {
-                  setDeletingId(null)
-                }
-              }}
-              disabled={!userId || deletingId === ws.id}
-              className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30 disabled:opacity-60 disabled:cursor-not-allowed"
-              aria-label="워크스페이스 삭제"
-              title="워크스페이스 삭제"
-            >
-              {deletingId === ws.id ? (
-                <span className="text-xs">…</span>
+              {editingId === ws.id ? (
+                <>
+                  <input
+                    type="text"
+                    value={editingTitle}
+                    onChange={e => setEditingTitle(e.target.value)}
+                    className="border px-2 rounded text-sm h-7 dark:bg-zinc-800 dark:border-zinc-700 text-zinc-900 dark:text-zinc-100"
+                    disabled={updating}
+                    autoFocus
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') handleSaveEdit(ws.id)
+                      if (e.key === 'Escape') { setEditingId(null); setEditingTitle("") }
+                    }}
+                  />
+                  <button
+                    onClick={e => {e.stopPropagation(); handleSaveEdit(ws.id)}}
+                    disabled={updating || !editingTitle.trim()}
+                    className="ml-1 rounded p-1 bg-transparent text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700/80 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+                    aria-label="저장"
+                    title="저장"
+                    type="button"
+                    style={{lineHeight:0,display:'inline-flex',alignItems:'center',justifyContent:'center'}}
+                  >
+                    {/* 두꺼운 고딕 체크 SVG */}
+                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.7" strokeLinecap="round" strokeLinejoin="round" className="w-[17px] h-[17px] pointer-events-none">
+                      <polyline points="4 11 9 16 16 6" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={e => {e.stopPropagation(); setEditingId(null); setEditingTitle("")}}
+                    disabled={updating}
+                    className="ml-1 rounded p-1 bg-transparent text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700/80 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+                    aria-label="취소"
+                    title="취소"
+                    type="button"
+                    style={{lineHeight:0,display:'inline-flex',alignItems:'center',justifyContent:'center'}}
+                  >
+                    {/* 두꺼운 고딕 X SVG */}
+                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.7" strokeLinecap="round" strokeLinejoin="round" className="w-[17px] h-[17px] pointer-events-none">
+                      <line x1="5" y1="5" x2="15" y2="15" />
+                      <line x1="15" y1="5" x2="5" y2="15" />
+                    </svg>
+                  </button>
+                </>
               ) : (
-                <span className="text-sm">×</span>
+                <>
+                  <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{ws.title}</div>
+                  <button
+                    onClick={e => {e.stopPropagation(); setEditingId(ws.id); setEditingTitle(ws.title)}}
+                    className="ml-2 group rounded p-1 bg-transparent text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700/80 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+                    aria-label="이름 수정"
+                    title="이름 수정"
+                    type="button"
+                    style={{lineHeight:0,display:'inline-flex',alignItems:'center',justifyContent:'center'}}
+                  >
+                    <span className="inline-block w-[17px] h-[17px]">
+                      <EditNoteIcon />
+                    </span>
+                  </button>
+                </>
               )}
-            </button>
+            </div>
+            <div className="flex flex-col items-end pl-2">
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation() // 클릭 이벤트가 부모로 전파되지 않도록 방지
+                  if (!userId || deletingId) return
+                  const ok = window.confirm('워크스페이스를 삭제하시겠습니까?')
+                  if (!ok) return
+                  try {
+                    setDeletingId(ws.id)
+                    const { error: err } = await supabase
+                      .from('workspaces')
+                      .delete()
+                      .eq('id', ws.id)
+                      .eq('user_id', userId)
+                    if (err) throw err
+                    setWorkspaces(prev => prev.filter(w => w.id !== ws.id))
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : '삭제에 실패했어요')
+                  } finally {
+                    setDeletingId(null)
+                  }
+                }}
+                disabled={!userId || deletingId === ws.id}
+                className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30 disabled:opacity-60 disabled:cursor-not-allowed mb-1"
+                aria-label="워크스페이스 삭제"
+                title="워크스페이스 삭제"
+              >
+                {deletingId === ws.id ? (
+                  <span className="text-xs">…</span>
+                ) : (
+                  <span className="text-sm">×</span>
+                )}
+              </button>
+              <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                {new Date(ws.created_at).toLocaleString('ko-KR')}
+              </div>
+            </div>
           </li>
         ))}
       </ul>
     )
-  }, [userId, loading, error, workspaces, deletingId])
+  }, [userId, loading, error, workspaces, deletingId, editingId, editingTitle, updating])
 
   return (
     <div className="w-full max-w-2xl mx-auto">

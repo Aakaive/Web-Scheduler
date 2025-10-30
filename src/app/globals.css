@@ -24,3 +24,11 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.edit-icon {
+  filter: grayscale(100%) brightness(0.4) sepia(0.15) saturate(2); /* gray700 느낌 */
+  transition: filter 0.2s;
+}
+.edit-icon:hover {
+  filter: none;
+}
