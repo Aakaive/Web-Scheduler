@@ -124,13 +124,13 @@ export default function WorkspacePage() {
 
           {/* 워크스페이스 콘텐츠 영역 */}
           <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
+            <div className="">
+              {/* <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
                 기능 바로가기
               </h2>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">
                 워크스페이스의 주요 기능들에 빠르게 접근하세요.
-              </p>
+              </p> */}
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
