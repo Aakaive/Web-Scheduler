@@ -158,8 +158,7 @@ export default function WorkspacePage() {
               {/* 일정 리마인더 버튼 */}
               <button
                 onClick={() => {
-                  // 향후 일정 리마인더 페이지로 이동
-                  console.log('일정 리마인더 기능으로 이동')
+                  router.push(`/reminder/${workspaceId}`)
                 }}
                 className="p-6 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-green-300 dark:hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200 group"
               >

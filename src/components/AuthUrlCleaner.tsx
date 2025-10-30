@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 
 export default function AuthUrlCleaner() {
   const pathname = usePathname()
@@ -10,8 +11,12 @@ export default function AuthUrlCleaner() {
   useEffect(() => {
     if (typeof window === 'undefined') return
 
-    const cleanQuery = () => {
+    const cleanQuery = async () => {
       const url = new URL(window.location.href)
+      
+      // provider_token을 세션에 저장하기 전에 추출
+      const providerToken = url.searchParams.get('provider_token')
+      
       const keys = [
         'access_token',
         'refresh_token',
@@ -35,12 +40,24 @@ export default function AuthUrlCleaner() {
         const base = url.origin + url.pathname + (qs ? `?${qs}` : '')
         window.history.replaceState(null, '', base)
       }
+      
+      // provider_token이 있으면 localStorage에 저장
+      if (providerToken) {
+        console.log('Found provider_token in URL (query), saving to localStorage')
+        localStorage.setItem('google_provider_token', providerToken)
+      } else {
+        console.log('No provider_token found in URL query params')
+      }
     }
 
-    const cleanHash = () => {
+    const cleanHash = async () => {
       const raw = window.location.hash.replace(/^#/, '')
       if (!raw) return
       const params = new URLSearchParams(raw)
+      
+      // provider_token을 세션에 저장하기 전에 추출
+      const providerToken = params.get('provider_token')
+      
       const keys = [
         'access_token',
         'refresh_token',
@@ -63,6 +80,14 @@ export default function AuthUrlCleaner() {
         const newHash = params.toString()
         const base = window.location.pathname + (window.location.search || '') + (newHash ? `#${newHash}` : '')
         window.history.replaceState(null, '', base)
+      }
+      
+      // provider_token이 있으면 localStorage에 저장
+      if (providerToken) {
+        console.log('Found provider_token in URL (hash), saving to localStorage')
+        localStorage.setItem('google_provider_token', providerToken)
+      } else {
+        console.log('No provider_token found in URL hash')
       }
     }
 
