@@ -57,6 +57,7 @@ export default function ReminderModal({
         expression: expression || null,
         user_id: userId,
         workspace_id: workspaceId,
+        google_event_id: null,
       }
 
       const createdReminder = await createReminder(reminder)
