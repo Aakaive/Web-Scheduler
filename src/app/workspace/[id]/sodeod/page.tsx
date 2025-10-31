@@ -138,7 +138,9 @@ export default function SodeodPage() {
 
           {/* 달력 영역 */}
           <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
-            <SodeodCalendar onDateSelect={handleDateSelect} />
+            {userId && (
+              <SodeodCalendar onDateSelect={handleDateSelect} workspaceId={workspaceId} userId={userId} />
+            )}
           </div>
         </div>
       </main>

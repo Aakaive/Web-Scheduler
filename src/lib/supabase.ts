@@ -186,3 +186,28 @@ export const deleteSod = async (sodId: string, userId: string) => {
     throw error
   }
 }
+
+// SoD 범위 조회 (월 단위 통계 계산용)
+export const getSodsInRange = async (
+  workspaceId: string,
+  userId: string,
+  startDateInclusive: string, // 'YYYY-MM-DD'
+  endDateInclusive: string // 'YYYY-MM-DD'
+) => {
+  const { data, error } = await supabase
+    .from('sods')
+    .select('*')
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', userId)
+    .gte('date', startDateInclusive)
+    .lte('date', endDateInclusive)
+    .order('date', { ascending: true })
+    .order('start_at', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching SODs in range:', error)
+    throw error
+  }
+
+  return data as Sod[]
+}
