@@ -137,8 +137,7 @@ export default function WorkspacePage() {
               {/* SoD/EoD 버튼 */}
               <button
                 onClick={() => {
-                  // 향후 SoD/EoD 페이지로 이동
-                  console.log('SoD/EoD 기능으로 이동')
+                  router.push(`/workspace/${workspaceId}/sodeod`)
                 }}
                 className="p-6 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 group"
               >
