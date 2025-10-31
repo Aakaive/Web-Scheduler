@@ -106,3 +106,83 @@ export const deleteReminder = async (reminderId: string, userId: string) => {
     throw error
   }
 }
+
+// SoD 테이블 타입 정의
+export interface Sod {
+  id: string
+  workspace_id: string
+  user_id: string
+  created_at: string
+  date: string  // DATE 타입 (YYYY-MM-DD)
+  start_at: string | null  // TIME 타입 (HH:MM:SS)
+  end_at: string | null  // TIME 타입 (HH:MM:SS)
+  summary: string | null  // TEXT
+  expression: string | null  // TEXT
+  check: boolean  // BOOLEAN, default false
+}
+
+// SoD 데이터 조회 함수 (날짜별)
+export const getSodsByDate = async (workspaceId: string, userId: string, date: string) => {
+  const { data, error } = await supabase
+    .from('sods')
+    .select('*')
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', userId)
+    .eq('date', date)
+    .order('start_at', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching SODs:', error)
+    throw error
+  }
+
+  return data as Sod[]
+}
+
+// SoD 추가 함수
+export const createSod = async (sod: Omit<Sod, 'id' | 'created_at' | 'check'>) => {
+  const { data, error } = await supabase
+    .from('sods')
+    .insert({ ...sod, check: false })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error creating SOD:', error)
+    throw error
+  }
+
+  return data as Sod
+}
+
+// SoD 업데이트 함수 (체크박스 등)
+export const updateSod = async (sodId: string, userId: string, updates: Partial<Sod>) => {
+  const { data, error } = await supabase
+    .from('sods')
+    .update(updates)
+    .eq('id', sodId)
+    .eq('user_id', userId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error updating SOD:', error)
+    throw error
+  }
+
+  return data as Sod
+}
+
+// SoD 삭제 함수
+export const deleteSod = async (sodId: string, userId: string) => {
+  const { error } = await supabase
+    .from('sods')
+    .delete()
+    .eq('id', sodId)
+    .eq('user_id', userId)
+
+  if (error) {
+    console.error('Error deleting SOD:', error)
+    throw error
+  }
+}
