@@ -188,8 +188,10 @@ export default function SodeodCalendar({ onDateSelect, workspaceId, userId }: So
           const stat = statsByDate[dayKey] || { total: 0, checked: 0 }
           const percent = stat.total === 0 ? 0 : Math.round((stat.checked / stat.total) * 1000) / 10
 
-          // 색상 구간: 낮음(빨강), 중간(주황), 높음(초록)
+          // 색상 구간: SoD가 없으면 배경 없음, 있으면 달성률에 따라 낮음(빨강), 중간(주황), 높음(초록)
           const intensityClass = !isCurrentMonthDate
+            ? ''
+            : stat.total === 0
             ? ''
             : percent < 34
             ? 'bg-red-100/60 dark:bg-red-900/30'
@@ -219,10 +221,12 @@ export default function SodeodCalendar({ onDateSelect, workspaceId, userId }: So
               <span className={`absolute top-1 left-1 text-xs ${isHoliday ? 'text-red-600 dark:text-red-400' : ''}`}>
                 {date.getDate()}
               </span>
-              {/* 중앙: 퍼센트 */}
-              <span className="flex items-center justify-center h-full text-sm font-medium">
-                {loadingStats && isCurrentMonthDate ? '…' : `${percent.toFixed(1)}%`}
-              </span>
+              {/* 중앙: 퍼센트 (SoD가 있을 때만 표시) */}
+              {stat.total > 0 && (
+                <span className="flex items-center justify-center h-full text-sm font-medium">
+                  {loadingStats && isCurrentMonthDate ? '…' : `${percent.toFixed(1)}%`}
+                </span>
+              )}
             </button>
           )
         })}
