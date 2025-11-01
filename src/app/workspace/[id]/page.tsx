@@ -384,7 +384,7 @@ export default function WorkspacePage() {
                   </h2>
                   <Link
                     href={`/todo/${workspaceId}`}
-                    className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
+                    className="text-sm font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
                   >
                     전체보기 →
                   </Link>
@@ -411,16 +411,23 @@ export default function WorkspacePage() {
                           onClick={() => router.push(`/todo/${workspaceId}`)}
                         >
                           <div className="flex items-start gap-3">
-                            <input
-                              type="checkbox"
-                              checked={todo.completed}
-                              onChange={(e) => {
+                            <div 
+                              className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 cursor-pointer ${
+                                todo.completed
+                                  ? 'border-purple-500 bg-purple-500'
+                                  : 'border-zinc-300 dark:border-zinc-700 hover:border-purple-400 dark:hover:border-purple-500'
+                              }`}
+                              onClick={(e) => {
                                 e.stopPropagation()
                                 handleTodoToggle(todo.id, todo.completed)
                               }}
-                              onClick={(e) => e.stopPropagation()}
-                              className="mt-1 w-5 h-5 rounded border-zinc-300 dark:border-zinc-700 text-purple-600 focus:ring-purple-500 cursor-pointer shrink-0"
-                            />
+                            >
+                              {todo.completed && (
+                                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start gap-2 mb-2">
                                 <h3 className="text-base font-medium text-zinc-900 dark:text-zinc-100 flex-1 line-clamp-2">
@@ -467,7 +474,7 @@ export default function WorkspacePage() {
                   </h2>
                   <Link
                     href={`/reminder/${workspaceId}`}
-                    className="text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors"
+                    className="text-sm font-semibold text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors"
                   >
                     전체보기 →
                   </Link>
@@ -550,7 +557,7 @@ export default function WorkspacePage() {
                     </h2>
                     <Link
                       href={`/workspace/${workspaceId}/sodeod`}
-                      className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                      className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                     >
                       전체보기 →
                     </Link>
