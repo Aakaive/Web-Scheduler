@@ -8,11 +8,12 @@ interface SodeodCalendarProps {
   workspaceId: string
   userId: string
   onMonthChange?: (year: number, month: number) => void
+  onRoutineModalOpen?: () => void
 }
 
 type DayStats = { total: number; checked: number }
 
-export default function SodeodCalendar({ onDateSelect, workspaceId, userId, onMonthChange }: SodeodCalendarProps) {
+export default function SodeodCalendar({ onDateSelect, workspaceId, userId, onMonthChange, onRoutineModalOpen }: SodeodCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [statsByDate, setStatsByDate] = useState<Record<string, DayStats>>({})
   const [loadingStats, setLoadingStats] = useState(false)
@@ -171,19 +172,34 @@ export default function SodeodCalendar({ onDateSelect, workspaceId, userId, onMo
   return (
     <div className="w-full">
       {/* 헤더: 월/년도 및 네비게이션 */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-            {year}년 {month + 1}월
-          </h2>
-          <button
-            onClick={goToToday}
-            className="px-3 py-1 text-sm border border-zinc-300 dark:border-zinc-700 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
-          >
-            오늘
-          </button>
+      <div className="mb-6 space-y-3">
+        {/* 첫 번째 줄: 연월 표시 + 오늘 버튼 / 루틴 관리 버튼 */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+              {year}년 {month + 1}월
+            </h2>
+            <button
+              onClick={goToToday}
+              className="px-3 py-1 text-sm border border-zinc-300 dark:border-zinc-700 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+            >
+              오늘
+            </button>
+          </div>
+          
+          {/* 우측: 루틴 관리 버튼 */}
+          {onRoutineModalOpen && (
+            <button
+              onClick={onRoutineModalOpen}
+              className="px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+            >
+              루틴 관리
+            </button>
+          )}
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* 두 번째 줄: 이전달/다음달 버튼 (중앙 정렬) */}
+        <div className="flex items-center justify-center gap-2">
           <button
             onClick={goToPreviousMonth}
             className="p-2 border border-zinc-300 dark:border-zinc-700 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"

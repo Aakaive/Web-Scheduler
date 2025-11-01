@@ -149,20 +149,12 @@ export default function SodeodPage() {
                   {workspace.title} - 시작/종료 일정 관리
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleRoutineModalOpen}
-                  className="px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-                >
-                  루틴 관리
-                </button>
-                <Link
-                  href={`/workspace/${workspaceId}`}
-                  className="px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
-                >
-                  ← 워크스페이스로
-                </Link>
-              </div>
+              <Link
+                href={`/workspace/${workspaceId}`}
+                className="px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+              >
+                ← 워크스페이스로
+              </Link>
             </div>
           </div>
 
@@ -174,6 +166,7 @@ export default function SodeodPage() {
                 workspaceId={workspaceId} 
                 userId={userId}
                 onMonthChange={handleMonthChange}
+                onRoutineModalOpen={handleRoutineModalOpen}
               />
             )}
           </div>
