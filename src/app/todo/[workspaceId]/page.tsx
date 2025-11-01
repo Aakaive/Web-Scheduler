@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { supabase, getTodosByWorkspace, Todo, deleteTodo, updateTodo } from '@/lib/supabase'
+import { supabase, getTodosByWorkspace, Todo, deleteTodo, updateTodo, toggleTodoPin, upTodo } from '@/lib/supabase'
 import Link from 'next/link'
 import TodoList from '@/components/TodoList'
 import TodoModal from '@/components/TodoModal'
@@ -71,14 +71,36 @@ export default function TodoPage() {
     }
   }
 
-  const handleTodoEdit = async (todoId: string, title: string, content: string | null) => {
+  const handleTodoEdit = async (todoId: string, summary: string, expression: string | null) => {
     if (!userId) return
     
     try {
-      await updateTodo(todoId, userId, { title, content })
+      await updateTodo(todoId, userId, { summary, expression })
       fetchTodos() // 목록 새로고침
     } catch (e) {
       setError(e instanceof Error ? e.message : '할 일 수정에 실패했습니다.')
+    }
+  }
+
+  const handleTodoPin = async (todoId: string, isPinned: boolean) => {
+    if (!userId) return
+    
+    try {
+      await toggleTodoPin(todoId, userId, isPinned)
+      fetchTodos() // 목록 새로고침
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '할 일 고정에 실패했습니다.')
+    }
+  }
+
+  const handleTodoUp = async (todoId: string) => {
+    if (!userId) return
+    
+    try {
+      await upTodo(todoId, userId)
+      fetchTodos() // 목록 새로고침
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '할 일 이동에 실패했습니다.')
     }
   }
 
@@ -136,6 +158,8 @@ export default function TodoPage() {
                 onDelete={handleTodoDeleted}
                 onToggle={handleTodoToggle}
                 onEdit={handleTodoEdit}
+                onPin={handleTodoPin}
+                onUp={handleTodoUp}
               />
             )}
           </div>

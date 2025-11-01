@@ -12,16 +12,16 @@ interface TodoModalProps {
 }
 
 export default function TodoModal({ isOpen, onClose, workspaceId, userId, onTodoAdded }: TodoModalProps) {
-  const [title, setTitle] = useState('')
-  const [content, setContent] = useState('')
+  const [summary, setSummary] = useState('')
+  const [expression, setExpression] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!title.trim()) {
-      setError('제목을 입력해주세요.')
+    if (!summary.trim()) {
+      setError('요약을 입력해주세요.')
       return
     }
 
@@ -32,13 +32,13 @@ export default function TodoModal({ isOpen, onClose, workspaceId, userId, onTodo
       await createTodo({
         workspace_id: workspaceId,
         user_id: userId,
-        title: title.trim(),
-        content: content.trim() || null,
+        summary: summary.trim(),
+        expression: expression.trim() || null,
       })
 
       // 성공 시 초기화 및 닫기
-      setTitle('')
-      setContent('')
+      setSummary('')
+      setExpression('')
       onTodoAdded()
       onClose()
     } catch (err) {
@@ -50,8 +50,8 @@ export default function TodoModal({ isOpen, onClose, workspaceId, userId, onTodo
 
   const handleClose = () => {
     if (!isSubmitting) {
-      setTitle('')
-      setContent('')
+      setSummary('')
+      setExpression('')
       setError(null)
       onClose()
     }
@@ -76,14 +76,14 @@ export default function TodoModal({ isOpen, onClose, workspaceId, userId, onTodo
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                제목 *
+                요약 *
               </label>
               <input
                 type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="할 일 제목을 입력하세요"
+                value={summary}
+                onChange={(e) => setSummary(e.target.value)}
+                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="해야할 일을 간단히 입력하세요"
                 disabled={isSubmitting}
                 autoFocus
               />
@@ -91,12 +91,12 @@ export default function TodoModal({ isOpen, onClose, workspaceId, userId, onTodo
 
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                내용 (선택사항)
+                상세 (선택사항)
               </label>
               <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[120px]"
+                value={expression}
+                onChange={(e) => setExpression(e.target.value)}
+                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent min-h-[120px]"
                 placeholder="할 일에 대한 상세 내용을 입력하세요"
                 disabled={isSubmitting}
               />
@@ -119,7 +119,7 @@ export default function TodoModal({ isOpen, onClose, workspaceId, userId, onTodo
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? '추가 중...' : '추가'}

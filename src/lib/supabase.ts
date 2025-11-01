@@ -217,18 +217,24 @@ export interface Todo {
   id: string
   workspace_id: string
   user_id: string
-  title: string
-  content: string | null
-  completed: boolean
   created_at: string
+  is_pinned: boolean
+  pinned_at: string | null
+  upped_at: string | null
+  summary: string
+  expression: string | null
+  completed: boolean
 }
 
-// ToDo 데이터 조회 함수
+// ToDo 데이터 조회 함수 (정렬: pinned > upped_at > created_at)
 export const getTodosByWorkspace = async (workspaceId: string) => {
   const { data, error } = await supabase
     .from('todos')
     .select('*')
     .eq('workspace_id', workspaceId)
+    .order('is_pinned', { ascending: false })
+    .order('pinned_at', { ascending: false, nullsFirst: false })
+    .order('upped_at', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -240,10 +246,16 @@ export const getTodosByWorkspace = async (workspaceId: string) => {
 }
 
 // ToDo 추가 함수
-export const createTodo = async (todo: Omit<Todo, 'id' | 'created_at' | 'completed'>) => {
+export const createTodo = async (todo: Omit<Todo, 'id' | 'created_at' | 'completed' | 'is_pinned' | 'pinned_at' | 'upped_at'>) => {
   const { data, error } = await supabase
     .from('todos')
-    .insert({ ...todo, completed: false })
+    .insert({ 
+      ...todo, 
+      completed: false,
+      is_pinned: false,
+      pinned_at: null,
+      upped_at: null
+    })
     .select()
     .single()
 
@@ -285,4 +297,23 @@ export const deleteTodo = async (todoId: string, userId: string) => {
     console.error('Error deleting todo:', error)
     throw error
   }
+}
+
+// ToDo Pin 토글 함수
+export const toggleTodoPin = async (todoId: string, userId: string, isPinned: boolean) => {
+  const updates: Partial<Todo> = {
+    is_pinned: isPinned,
+    pinned_at: isPinned ? new Date().toISOString() : null
+  }
+  
+  return updateTodo(todoId, userId, updates)
+}
+
+// ToDo Up 함수 (upped_at 업데이트)
+export const upTodo = async (todoId: string, userId: string) => {
+  const updates: Partial<Todo> = {
+    upped_at: new Date().toISOString()
+  }
+  
+  return updateTodo(todoId, userId, updates)
 }
