@@ -115,8 +115,10 @@ export default function TodoList({ todos, loading, userId, onDelete, onToggle, o
                 {todo.summary}
               </h3>
               {todo.is_pinned && (
-                <span className="text-yellow-500" title="고정됨">
-                  📌
+                <span className="text-yellow-600 dark:text-yellow-400 shrink-0" title="고정됨">
+                  <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v4.997a.31.31 0 0 1-.068.113c-.08.098-.213.207-.378.301-.947.543-1.713 1.54-2.191 2.488A6.237 6.237 0 0 0 4.82 14.4c-.1.48-.138 1.031.018 1.539C5.12 16.846 6.02 17 6.414 17H11v3a1 1 0 1 0 2 0v-3h4.586c.395 0 1.295-.154 1.575-1.061.156-.508.118-1.059.017-1.539a6.241 6.241 0 0 0-.541-1.5c-.479-.95-1.244-1.946-2.191-2.489a1.393 1.393 0 0 1-.378-.301.309.309 0 0 1-.068-.113V5h1a1 1 0 1 0 0-2H7a1 1 0 1 0 0 2h1Z"/>
+                  </svg>
                 </span>
               )}
             </div>
@@ -140,41 +142,55 @@ export default function TodoList({ todos, loading, userId, onDelete, onToggle, o
               <>
                 <button
                   onClick={() => onPin(todo.id, !todo.is_pinned)}
-                  className={`inline-flex items-center justify-center w-8 h-8 rounded-md border transition-colors ${
+                  className={`p-2 transition-colors ${
                     todo.is_pinned
-                      ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400'
-                      : 'border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-yellow-50 hover:border-yellow-300 dark:hover:bg-yellow-900/30'
+                      ? 'text-yellow-600 dark:text-yellow-400 hover:text-yellow-700 dark:hover:text-yellow-500'
+                      : 'text-zinc-400 hover:text-yellow-600 dark:hover:text-yellow-400'
                   }`}
                   aria-label="고정"
                   title={todo.is_pinned ? '고정 해제' : '고정'}
                 >
-                  <span className="text-sm">📌</span>
+                  {todo.is_pinned ? (
+                    <svg className="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v4.997a.31.31 0 0 1-.068.113c-.08.098-.213.207-.378.301-.947.543-1.713 1.54-2.191 2.488A6.237 6.237 0 0 0 4.82 14.4c-.1.48-.138 1.031.018 1.539C5.12 16.846 6.02 17 6.414 17H11v3a1 1 0 1 0 2 0v-3h4.586c.395 0 1.295-.154 1.575-1.061.156-.508.118-1.059.017-1.539a6.241 6.241 0 0 0-.541-1.5c-.479-.95-1.244-1.946-2.191-2.489a1.393 1.393 0 0 1-.378-.301.309.309 0 0 1-.068-.113V5h1a1 1 0 1 0 0-2H7a1 1 0 1 0 0 2h1Z"/>
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                      <path stroke="currentColor" strokeLinecap="round" strokeWidth="2" d="M12.0001 20v-4M7.00012 4h9.99998M9.00012 5v5c0 .5523-.46939 1.0045-.94861 1.279-1.43433.8217-2.60135 3.245-2.25635 4.3653.07806.2535.35396.3557.61917.3557H17.5859c.2652 0 .5411-.1022.6192-.3557.3449-1.1204-.8221-3.5436-2.2564-4.3653-.4792-.2745-.9486-.7267-.9486-1.279V5c0-.55228-.4477-1-1-1h-4c-.55226 0-.99998.44772-.99998 1Z"/>
+                    </svg>
+                  )}
                 </button>
                 <button
                   onClick={() => onUp(todo.id)}
-                  className="inline-flex items-center justify-center w-8 h-8 rounded-md border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-blue-50 hover:border-blue-300 dark:hover:bg-blue-900/30 transition-colors"
+                  className="p-2 text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                   aria-label="위로"
                   title="맨 앞으로 이동"
                 >
-                  <span className="text-sm">⬆️</span>
+                  <svg className="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m16 17-4-4-4 4m8-6-4-4-4 4"/>
+                  </svg>
                 </button>
               </>
             )}
             <button
               onClick={() => handleStartEdit(todo)}
-              className="inline-flex items-center justify-center w-8 h-8 rounded-md border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 dark:hover:bg-blue-900/30 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="p-2 text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               aria-label="수정"
               title="수정"
             >
-              <span className="text-sm">✏️</span>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M4 20h4.586a1 1 0 00.707-.293l9.9-9.9a1 1 0 000-1.414l-3.536-3.536a1 1 0 00-1.414 0l-9.9 9.9A1 1 0 004 15.414V20z" />
+              </svg>
             </button>
             <button
               onClick={() => handleDelete(todo.id, todo.summary)}
-              className="inline-flex items-center justify-center w-8 h-8 rounded-md border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-red-50 hover:text-red-600 hover:border-red-300 dark:hover:bg-red-900/30 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="p-2 text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
               aria-label="삭제"
               title="삭제"
             >
-              <span className="text-lg leading-none">×</span>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
             </button>
           </div>
         </div>
