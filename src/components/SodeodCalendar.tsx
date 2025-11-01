@@ -47,23 +47,61 @@ export default function SodeodCalendar({ onDateSelect, workspaceId, userId }: So
     return `${year}-${month}-${day}`
   }
 
-  // 대한민국 기준 양력(고정) 공휴일 판별 (설/추석/부처님오신날 등 음력 기반은 제외)
-  const isKoreanPublicHolidaySolar = (d: Date) => {
+  // 대한민국 공휴일 판별 (양력 고정 공휴일 + 음력 공휴일 + 대체 공휴일)
+  const isKoreanPublicHoliday = (d: Date) => {
+    const yyyy = d.getFullYear()
     const mm = String(d.getMonth() + 1).padStart(2, '0')
     const dd = String(d.getDate()).padStart(2, '0')
-    const key = `${mm}-${dd}`
-    // 양력 고정 공휴일 목록
+    const key = `${yyyy}-${mm}-${dd}`
+    
+    // 양력 고정 공휴일
+    const fixedKey = `${mm}-${dd}`
     const fixed = new Set([
       '01-01', // 신정
       '03-01', // 삼일절
-      '05-05', // 어린이날 (대체공휴일 미적용)
+      '05-05', // 어린이날
       '06-06', // 현충일
       '08-15', // 광복절
       '10-03', // 개천절
       '10-09', // 한글날
       '12-25', // 성탄절
     ])
-    return fixed.has(key)
+    
+    // 2024-2026년 음력 공휴일 및 대체 공휴일 (설날, 추석, 부처님오신날 포함)
+    const holidays2024 = new Set([
+      // 설날 연휴 (2024.02.09-11, 토-월) + 대체공휴일 (2024.02.12, 화)
+      '2024-02-09', '2024-02-10', '2024-02-11', '2024-02-12',
+      // 부처님오신날 (2024.05.15, 수)
+      '2024-05-15',
+      // 추석 연휴 (2024.09.16-18, 월-수)
+      '2024-09-16', '2024-09-17', '2024-09-18',
+    ])
+    
+    const holidays2025 = new Set([
+      // 설날 연휴 (2025.01.28-30, 화-목)
+      '2025-01-28', '2025-01-29', '2025-01-30',
+      // 부처님오신날 (2025.05.05, 월) - 어린이날과 겹침, 대체공휴일 (2025.05.06, 화)
+      '2025-05-05', '2025-05-06',
+      // 추석 연휴 (2025.10.05-07, 일-화) + 대체공휴일 (2025.10.08, 수)
+      '2025-10-05', '2025-10-06', '2025-10-07', '2025-10-08',
+    ])
+    
+    const holidays2026 = new Set([
+      // 설날 연휴 (2026.02.16-18, 월-수)
+      '2026-02-16', '2026-02-17', '2026-02-18',
+      // 부처님오신날 (2026.05.24, 일) + 대체공휴일 (2026.05.25, 월)
+      '2026-05-24', '2026-05-25',
+      // 추석 연휴 (2026.09.24-26, 목-토)
+      '2026-09-24', '2026-09-25', '2026-09-26',
+    ])
+    
+    // 연도별 분기
+    const yearlyHolidays = yyyy === 2024 ? holidays2024
+                         : yyyy === 2025 ? holidays2025
+                         : yyyy === 2026 ? holidays2026
+                         : new Set<string>()
+    
+    return fixed.has(fixedKey) || yearlyHolidays.has(key)
   }
 
   // 월 변경 시 범위 내 SoD 통계 가져오기
@@ -208,7 +246,7 @@ export default function SodeodCalendar({ onDateSelect, workspaceId, userId }: So
             ? 'text-orange-600 dark:text-orange-400'
             : 'text-green-600 dark:text-green-500'
 
-          const isHoliday = isCurrentMonthDate && isKoreanPublicHolidaySolar(date)
+          const isHoliday = isCurrentMonthDate && isKoreanPublicHoliday(date)
 
           // 달성률 표시: 항상 정수로 표시
           const percentDisplay = loadingStats && isCurrentMonthDate 
