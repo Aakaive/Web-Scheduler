@@ -211,3 +211,78 @@ export const getSodsInRange = async (
 
   return data as Sod[]
 }
+
+// ToDo 테이블 타입 정의
+export interface Todo {
+  id: string
+  workspace_id: string
+  user_id: string
+  title: string
+  content: string | null
+  completed: boolean
+  created_at: string
+}
+
+// ToDo 데이터 조회 함수
+export const getTodosByWorkspace = async (workspaceId: string) => {
+  const { data, error } = await supabase
+    .from('todos')
+    .select('*')
+    .eq('workspace_id', workspaceId)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching todos:', error)
+    throw error
+  }
+
+  return data as Todo[]
+}
+
+// ToDo 추가 함수
+export const createTodo = async (todo: Omit<Todo, 'id' | 'created_at' | 'completed'>) => {
+  const { data, error } = await supabase
+    .from('todos')
+    .insert({ ...todo, completed: false })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error creating todo:', error)
+    throw error
+  }
+
+  return data as Todo
+}
+
+// ToDo 업데이트 함수
+export const updateTodo = async (todoId: string, userId: string, updates: Partial<Todo>) => {
+  const { data, error } = await supabase
+    .from('todos')
+    .update(updates)
+    .eq('id', todoId)
+    .eq('user_id', userId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error updating todo:', error)
+    throw error
+  }
+
+  return data as Todo
+}
+
+// ToDo 삭제 함수
+export const deleteTodo = async (todoId: string, userId: string) => {
+  const { error } = await supabase
+    .from('todos')
+    .delete()
+    .eq('id', todoId)
+    .eq('user_id', userId)
+
+  if (error) {
+    console.error('Error deleting todo:', error)
+    throw error
+  }
+}
