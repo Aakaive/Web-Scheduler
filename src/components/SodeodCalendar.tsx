@@ -223,7 +223,7 @@ export default function SodeodCalendar({ onDateSelect, workspaceId, userId }: So
               </span>
               {/* 중앙: 퍼센트 (SoD가 있을 때만 표시) */}
               {stat.total > 0 && (
-                <span className="flex items-center justify-center h-full text-sm font-medium">
+                <span className="flex items-center justify-center h-full text-sm font-medium text-zinc-500 dark:text-zinc-400">
                   {loadingStats && isCurrentMonthDate ? '…' : `${percent.toFixed(1)}%`}
                 </span>
               )}
