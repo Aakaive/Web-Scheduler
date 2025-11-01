@@ -211,3 +211,109 @@ export const getSodsInRange = async (
 
   return data as Sod[]
 }
+
+// ToDo 테이블 타입 정의
+export interface Todo {
+  id: string
+  workspace_id: string
+  user_id: string
+  created_at: string
+  is_pinned: boolean
+  pinned_at: string | null
+  upped_at: string | null
+  summary: string
+  expression: string | null
+  completed: boolean
+}
+
+// ToDo 데이터 조회 함수 (정렬: pinned > upped_at > created_at)
+export const getTodosByWorkspace = async (workspaceId: string) => {
+  const { data, error } = await supabase
+    .from('todos')
+    .select('*')
+    .eq('workspace_id', workspaceId)
+    .order('is_pinned', { ascending: false })
+    .order('pinned_at', { ascending: false, nullsFirst: false })
+    .order('upped_at', { ascending: false, nullsFirst: false })
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching todos:', error)
+    throw error
+  }
+
+  return data as Todo[]
+}
+
+// ToDo 추가 함수
+export const createTodo = async (todo: Omit<Todo, 'id' | 'created_at' | 'completed' | 'is_pinned' | 'pinned_at' | 'upped_at'>) => {
+  const { data, error } = await supabase
+    .from('todos')
+    .insert({ 
+      ...todo, 
+      completed: false,
+      is_pinned: false,
+      pinned_at: null,
+      upped_at: null
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error creating todo:', error)
+    throw error
+  }
+
+  return data as Todo
+}
+
+// ToDo 업데이트 함수
+export const updateTodo = async (todoId: string, userId: string, updates: Partial<Todo>) => {
+  const { data, error } = await supabase
+    .from('todos')
+    .update(updates)
+    .eq('id', todoId)
+    .eq('user_id', userId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error updating todo:', error)
+    throw error
+  }
+
+  return data as Todo
+}
+
+// ToDo 삭제 함수
+export const deleteTodo = async (todoId: string, userId: string) => {
+  const { error } = await supabase
+    .from('todos')
+    .delete()
+    .eq('id', todoId)
+    .eq('user_id', userId)
+
+  if (error) {
+    console.error('Error deleting todo:', error)
+    throw error
+  }
+}
+
+// ToDo Pin 토글 함수
+export const toggleTodoPin = async (todoId: string, userId: string, isPinned: boolean) => {
+  const updates: Partial<Todo> = {
+    is_pinned: isPinned,
+    pinned_at: isPinned ? new Date().toISOString() : null
+  }
+  
+  return updateTodo(todoId, userId, updates)
+}
+
+// ToDo Up 함수 (upped_at 업데이트)
+export const upTodo = async (todoId: string, userId: string) => {
+  const updates: Partial<Todo> = {
+    upped_at: new Date().toISOString()
+  }
+  
+  return updateTodo(todoId, userId, updates)
+}

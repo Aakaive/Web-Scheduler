@@ -177,8 +177,7 @@ export default function WorkspacePage() {
               {/* ToDo 버튼 */}
               <button
                 onClick={() => {
-                  // 향후 ToDo 페이지로 이동
-                  console.log('ToDo 기능으로 이동')
+                  router.push(`/todo/${workspaceId}`)
                 }}
                 className="p-6 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-purple-300 dark:hover:border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200 group"
               >
