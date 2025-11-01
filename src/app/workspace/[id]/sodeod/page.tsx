@@ -140,20 +140,21 @@ export default function SodeodPage() {
         <div className="max-w-6xl mx-auto">
           {/* 헤더 */}
           <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <div>
+            <div className="flex items-center justify-between mb-4 gap-4">
+              <div className="flex-1 min-w-0">
                 <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
                   SoD/EoD
                 </h1>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 whitespace-nowrap overflow-hidden text-ellipsis">
                   {workspace.title} - 시작/종료 일정 관리
                 </p>
               </div>
               <Link
                 href={`/workspace/${workspaceId}`}
-                className="px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+                className="px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center gap-1 shrink-0"
               >
-                ← 워크스페이스로
+                <span>←</span>
+                <span className="hidden sm:inline whitespace-nowrap">워크스페이스로</span>
               </Link>
             </div>
           </div>
