@@ -39,6 +39,19 @@ export async function POST(request: NextRequest) {
     if (!calendarResponse.ok) {
       const errorData = await calendarResponse.text()
       console.error('Google Calendar API error:', errorData)
+      
+      // 401 Unauthorized: 토큰 만료 또는 권한 없음
+      if (calendarResponse.status === 401) {
+        return NextResponse.json(
+          { 
+            error: 'Google authentication expired or invalid. Please sign in again.', 
+            details: errorData,
+            needsReauth: true 
+          },
+          { status: 401 }
+        )
+      }
+      
       return NextResponse.json(
         { error: 'Failed to create calendar event', details: errorData },
         { status: calendarResponse.status }
@@ -94,6 +107,19 @@ export async function DELETE(request: NextRequest) {
     if (!calendarResponse.ok) {
       const errorData = await calendarResponse.text()
       console.error('Google Calendar API error:', errorData)
+      
+      // 401 Unauthorized: 토큰 만료 또는 권한 없음
+      if (calendarResponse.status === 401) {
+        return NextResponse.json(
+          { 
+            error: 'Google authentication expired or invalid. Please sign in again.', 
+            details: errorData,
+            needsReauth: true 
+          },
+          { status: 401 }
+        )
+      }
+      
       return NextResponse.json(
         { error: 'Failed to delete calendar event', details: errorData },
         { status: calendarResponse.status }

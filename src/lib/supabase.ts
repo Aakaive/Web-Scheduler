@@ -317,3 +317,35 @@ export const upTodo = async (todoId: string, userId: string) => {
   
   return updateTodo(todoId, userId, updates)
 }
+
+// Google OAuth 토큰 갱신 함수
+export const getRefreshedGoogleToken = async (): Promise<string | null> => {
+  try {
+    // Supabase 세션을 가져오면 자동으로 토큰이 갱신됨
+    const { data, error } = await supabase.auth.getSession()
+    
+    if (error) {
+      console.error('Error getting session:', error)
+      return null
+    }
+    
+    if (!data.session) {
+      console.warn('No active session found')
+      return null
+    }
+    
+    // provider_token이 갱신되었을 수 있으므로 localStorage에 업데이트
+    if (data.session.provider_token) {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('google_provider_token', data.session.provider_token)
+      }
+      return data.session.provider_token
+    }
+    
+    console.warn('No provider_token in session')
+    return null
+  } catch (err) {
+    console.error('Failed to refresh Google token:', err)
+    return null
+  }
+}

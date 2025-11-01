@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
-import { createReminder, Reminder, supabase } from '@/lib/supabase'
+import { createReminder, Reminder, supabase, getRefreshedGoogleToken } from '@/lib/supabase'
 
 interface ReminderModalProps {
   isOpen: boolean
@@ -62,11 +62,10 @@ export default function ReminderModal({
 
       const createdReminder = await createReminder(reminder)
 
-      // localStorage에서 Google 토큰 가져오기
-      const googleToken = typeof window !== 'undefined' ? localStorage.getItem('google_provider_token') : null
+      // Supabase 세션에서 갱신된 Google 토큰 가져오기
+      const googleToken = await getRefreshedGoogleToken()
       
       console.log('Google token available:', !!googleToken)
-      console.log('localStorage items:', typeof window !== 'undefined' ? Object.keys(localStorage) : 'N/A')
       
       let googleEventId = null
       
@@ -90,7 +89,17 @@ export default function ReminderModal({
           if (!calendarResponse.ok) {
             const errorData = await calendarResponse.json()
             console.error('Failed to add to Google Calendar:', errorData)
-            // Supabase는 성공했지만 캘린더 추가가 실패한 경우 경고만 표시
+            
+            // 토큰 만료로 인한 401 에러인 경우
+            if (errorData.needsReauth) {
+              alert('구글 로그인이 만료되었습니다. 다시 로그인해주세요.')
+              // 로그아웃 처리
+              await supabase.auth.signOut()
+              window.location.reload()
+              return
+            }
+            
+            // 기타 에러
             alert(`일정은 저장되었지만 구글 캘린더에 추가하지 못했습니다: ${errorData.error}`)
           } else {
             const result = await calendarResponse.json()
@@ -103,6 +112,7 @@ export default function ReminderModal({
         }
       } else {
         console.warn('Google token not available, skipping calendar sync')
+        alert('구글 로그인이 필요합니다. 일정은 저장되었지만 구글 캘린더에는 추가되지 않았습니다.')
       }
       
       // Google event ID를 Supabase에 업데이트
