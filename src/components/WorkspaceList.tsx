@@ -53,8 +53,31 @@ export default function WorkspaceList() {
       const { data } = await supabase.auth.getUser()
       const uid = data.user?.id ?? null
       setUserId(uid)
+      
+      // 로그아웃 시 워크스페이스 목록 초기화
+      if (!uid) {
+        setWorkspaces([])
+        setLoading(false)
+      }
     }
     init()
+
+    // Auth state 변경 감지
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const uid = session?.user?.id ?? null
+      setUserId(uid)
+      
+      // 로그아웃 시 워크스페이스 목록 초기화
+      if (event === 'SIGNED_OUT' || !uid) {
+        setWorkspaces([])
+        setLoading(false)
+        setError(null)
+      }
+    })
+
+    return () => {
+      authListener.subscription.unsubscribe()
+    }
   }, [])
 
   useEffect(() => {

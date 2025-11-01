@@ -160,9 +160,17 @@ export default function AuthPanel() {
       await supabase.auth.signOut()
       setUser(null)
       ensuredRef.current = false
+      
+      // localStorage 정리
+      localStorage.removeItem('google_provider_token')
+      localStorage.removeItem('google_provider_refresh_token')
+      
       cleanAuthParamsFromUrl()
-      router.refresh()
-    } finally {
+      
+      // 메인 페이지로 리디렉션 및 완전한 새로고침
+      window.location.href = '/'
+    } catch (error) {
+      console.error('로그아웃 에러:', error)
       setSigningOut(false)
     }
   }
