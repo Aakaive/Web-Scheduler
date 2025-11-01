@@ -180,6 +180,7 @@ export default function SodeodModal({
         end_at: endAt24,
         summary: summary || null,
         expression: expression || null,
+        routine_id: null,
       })
 
       // 폼 초기화 및 숨김
@@ -565,7 +566,11 @@ export default function SodeodModal({
                             </div>
                           </div>
                           {sod.summary && (
-                            <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
+                            <div className={`text-sm font-semibold mb-1 ${
+                              sod.summary.startsWith('(루틴)')
+                                ? 'text-purple-600 dark:text-purple-400'
+                                : 'text-zinc-900 dark:text-zinc-100'
+                            }`}>
                               {sod.summary}
                             </div>
                           )}

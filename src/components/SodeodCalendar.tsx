@@ -7,17 +7,25 @@ interface SodeodCalendarProps {
   onDateSelect: (date: Date) => void
   workspaceId: string
   userId: string
+  onMonthChange?: (year: number, month: number) => void
 }
 
 type DayStats = { total: number; checked: number }
 
-export default function SodeodCalendar({ onDateSelect, workspaceId, userId }: SodeodCalendarProps) {
+export default function SodeodCalendar({ onDateSelect, workspaceId, userId, onMonthChange }: SodeodCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [statsByDate, setStatsByDate] = useState<Record<string, DayStats>>({})
   const [loadingStats, setLoadingStats] = useState(false)
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
+
+  // 월 변경 시 부모 컴포넌트에 알림
+  useEffect(() => {
+    if (onMonthChange) {
+      onMonthChange(year, month)
+    }
+  }, [year, month, onMonthChange])
 
   // 현재 월의 첫 번째 날과 마지막 날
   const firstDayOfMonth = new Date(year, month, 1)

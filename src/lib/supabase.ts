@@ -119,6 +119,22 @@ export interface Sod {
   summary: string | null  // TEXT
   expression: string | null  // TEXT
   check: boolean  // BOOLEAN, default false
+  routine_id: string | null  // 루틴 ID (루틴으로 생성된 경우)
+}
+
+// 루틴 테이블 타입 정의
+export interface Routine {
+  id: string
+  workspace_id: string
+  user_id: string
+  created_at: string
+  title: string
+  summary: string | null
+  expression: string | null
+  start_at: string  // TIME 타입 (HH:MM:SS)
+  end_at: string | null  // TIME 타입 (HH:MM:SS)
+  repeat_days: number[]  // [0,1,2,3,4,5,6] - 0=일요일, 6=토요일
+  is_active: boolean
 }
 
 // SoD 데이터 조회 함수 (날짜별)
@@ -347,5 +363,161 @@ export const getRefreshedGoogleToken = async (): Promise<string | null> => {
   } catch (err) {
     console.error('Failed to refresh Google token:', err)
     return null
+  }
+}
+
+// ============================================
+// 루틴 관련 함수들
+// ============================================
+
+// 루틴 조회 함수 (워크스페이스별)
+export const getRoutinesByWorkspace = async (workspaceId: string, userId: string) => {
+  const { data, error } = await supabase
+    .from('routines')
+    .select('*')
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching routines:', error)
+    throw error
+  }
+
+  return data as Routine[]
+}
+
+// 루틴 생성 함수
+export const createRoutine = async (routine: Omit<Routine, 'id' | 'created_at' | 'is_active'>) => {
+  const { data, error } = await supabase
+    .from('routines')
+    .insert({ ...routine, is_active: true })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error creating routine:', error)
+    throw error
+  }
+
+  return data as Routine
+}
+
+// 루틴 수정 함수
+export const updateRoutine = async (routineId: string, userId: string, updates: Partial<Routine>) => {
+  const { data, error } = await supabase
+    .from('routines')
+    .update(updates)
+    .eq('id', routineId)
+    .eq('user_id', userId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error updating routine:', error)
+    throw error
+  }
+
+  return data as Routine
+}
+
+// 루틴 삭제 함수
+export const deleteRoutine = async (routineId: string, userId: string) => {
+  // 먼저 관련된 SoD들의 routine_id를 null로 설정
+  await supabase
+    .from('sods')
+    .update({ routine_id: null })
+    .eq('routine_id', routineId)
+    .eq('user_id', userId)
+
+  // 루틴 삭제
+  const { error } = await supabase
+    .from('routines')
+    .delete()
+    .eq('id', routineId)
+    .eq('user_id', userId)
+
+  if (error) {
+    console.error('Error deleting routine:', error)
+    throw error
+  }
+}
+
+// 특정 월에 루틴 적용하기 (SoD 생성)
+export const applyRoutineToMonth = async (
+  routine: Routine,
+  year: number,
+  month: number,
+  workspaceId: string,
+  userId: string
+) => {
+  const firstDay = new Date(year, month, 1)
+  const lastDay = new Date(year, month + 1, 0)
+  
+  const sodsToCreate: Omit<Sod, 'id' | 'created_at'>[] = []
+  
+  for (let day = 1; day <= lastDay.getDate(); day++) {
+    const date = new Date(year, month, day)
+    const dayOfWeek = date.getDay()
+    
+    // 선택된 요일인 경우
+    if (routine.repeat_days.includes(dayOfWeek)) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+      
+      // Summary에 (루틴) 접두어 추가
+      const summaryText = routine.summary ? `(루틴) ${routine.summary}` : '(루틴)'
+      
+      sodsToCreate.push({
+        workspace_id: workspaceId,
+        user_id: userId,
+        date: dateStr,
+        start_at: routine.start_at,
+        end_at: routine.end_at,
+        summary: summaryText,
+        expression: routine.expression,
+        routine_id: routine.id,
+        check: false
+      })
+    }
+  }
+  
+  if (sodsToCreate.length > 0) {
+    const { error } = await supabase
+      .from('sods')
+      .insert(sodsToCreate)
+    
+    if (error) {
+      console.error('Error applying routine to month:', error)
+      throw error
+    }
+  }
+  
+  return sodsToCreate.length
+}
+
+// 특정 월에서 루틴 해제하기 (해당 루틴으로 생성된 SoD 삭제)
+export const removeRoutineFromMonth = async (
+  routineId: string,
+  year: number,
+  month: number,
+  workspaceId: string,
+  userId: string
+) => {
+  const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`
+  const lastDay = new Date(year, month + 1, 0).getDate()
+  const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+  
+  const { error } = await supabase
+    .from('sods')
+    .delete()
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', userId)
+    .eq('routine_id', routineId)
+    .gte('date', startDate)
+    .lte('date', endDate)
+  
+  if (error) {
+    console.error('Error removing routine from month:', error)
+    throw error
   }
 }

@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import SodeodCalendar from '@/components/SodeodCalendar'
 import SodeodModal from '@/components/SodeodModal'
+import RoutineManagementModal from '@/components/RoutineManagementModal'
 
 interface Workspace {
   id: string
@@ -25,6 +26,9 @@ export default function SodeodPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isRoutineModalOpen, setIsRoutineModalOpen] = useState(false)
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth())
 
   useEffect(() => {
     const init = async () => {
@@ -78,6 +82,24 @@ export default function SodeodPage() {
     setSelectedDate(null)
   }
 
+  const handleRoutineModalOpen = () => {
+    setIsRoutineModalOpen(true)
+  }
+
+  const handleRoutineModalClose = () => {
+    setIsRoutineModalOpen(false)
+  }
+
+  const handleMonthChange = (year: number, month: number) => {
+    setCurrentYear(year)
+    setCurrentMonth(month)
+  }
+
+  const handleRoutineApplied = () => {
+    // 루틴 적용/해제 시 페이지 새로고침하여 달력 업데이트
+    window.location.reload()
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-zinc-50 font-sans dark:bg-black">
@@ -127,19 +149,32 @@ export default function SodeodPage() {
                   {workspace.title} - 시작/종료 일정 관리
                 </p>
               </div>
-              <Link
-                href={`/workspace/${workspaceId}`}
-                className="px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
-              >
-                ← 워크스페이스로
-              </Link>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRoutineModalOpen}
+                  className="px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                >
+                  루틴 관리
+                </button>
+                <Link
+                  href={`/workspace/${workspaceId}`}
+                  className="px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+                >
+                  ← 워크스페이스로
+                </Link>
+              </div>
             </div>
           </div>
 
           {/* 달력 영역 */}
           <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
             {userId && (
-              <SodeodCalendar onDateSelect={handleDateSelect} workspaceId={workspaceId} userId={userId} />
+              <SodeodCalendar 
+                onDateSelect={handleDateSelect} 
+                workspaceId={workspaceId} 
+                userId={userId}
+                onMonthChange={handleMonthChange}
+              />
             )}
           </div>
         </div>
@@ -153,6 +188,19 @@ export default function SodeodPage() {
           date={selectedDate}
           workspaceId={workspaceId}
           userId={userId}
+        />
+      )}
+
+      {/* 루틴 관리 모달 */}
+      {isRoutineModalOpen && userId && (
+        <RoutineManagementModal
+          isOpen={isRoutineModalOpen}
+          onClose={handleRoutineModalClose}
+          workspaceId={workspaceId}
+          userId={userId}
+          year={currentYear}
+          month={currentMonth}
+          onRoutineApplied={handleRoutineApplied}
         />
       )}
     </div>
