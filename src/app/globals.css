@@ -32,3 +32,59 @@ body {
 .edit-icon:hover {
   filter: none;
 }
+
+/* 스크롤 시에만 보이는 스크롤바 */
+.scroll-on-hover {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s ease;
+}
+
+.scroll-on-hover:hover,
+.scroll-on-hover:active {
+  scrollbar-color: rgb(161 161 170) transparent; /* zinc-400 */
+}
+
+/* 다크모드 */
+@media (prefers-color-scheme: dark) {
+  .scroll-on-hover:hover,
+  .scroll-on-hover:active {
+    scrollbar-color: rgb(113 113 122) transparent; /* zinc-500 */
+  }
+}
+
+/* 웹킷 브라우저 (Chrome, Safari, Edge) */
+.scroll-on-hover::-webkit-scrollbar {
+  height: 8px;
+}
+
+.scroll-on-hover::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scroll-on-hover::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+.scroll-on-hover:hover::-webkit-scrollbar-thumb,
+.scroll-on-hover:active::-webkit-scrollbar-thumb {
+  background: rgb(161 161 170); /* zinc-400 */
+}
+
+.scroll-on-hover:hover::-webkit-scrollbar-thumb:hover {
+  background: rgb(113 113 122); /* zinc-500 */
+}
+
+/* 다크모드 */
+@media (prefers-color-scheme: dark) {
+  .scroll-on-hover:hover::-webkit-scrollbar-thumb,
+  .scroll-on-hover:active::-webkit-scrollbar-thumb {
+    background: rgb(113 113 122); /* zinc-500 */
+  }
+  
+  .scroll-on-hover:hover::-webkit-scrollbar-thumb:hover {
+    background: rgb(161 161 170); /* zinc-400 */
+  }
+}

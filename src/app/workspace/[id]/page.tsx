@@ -395,7 +395,7 @@ export default function WorkspacePage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto -mx-6 px-6">
+                  <div className="overflow-x-auto -mx-6 px-6 scroll-on-hover">
                     <div className="flex gap-4 min-w-min pb-2">
                       {inProgressTodos.map(todo => (
                         <div
@@ -474,7 +474,7 @@ export default function WorkspacePage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto -mx-6 px-6">
+                  <div className="overflow-x-auto -mx-6 px-6 scroll-on-hover">
                     <div className="flex gap-4 min-w-min pb-2">
                       {todayReminders.map(reminder => {
                         const startDate = new Date(reminder.start)
@@ -528,59 +528,62 @@ export default function WorkspacePage() {
 
               {/* SoD 섹션 */}
               <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 py-3 px-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
+                <div className="space-y-3 mb-4">
+                  {/* 첫 번째 줄: SoD 제목 + 전체보기 */}
+                  <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                       <span>🌅</span>
                       <span>SoD</span>
                     </h2>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={goToPreviousDay}
-                        className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition-colors"
-                        title="이전 날짜"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
-                      </button>
-                      <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800 rounded-md min-w-[140px] justify-center">
-                        <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                          {(() => {
-                            const [year, month, day] = selectedDate.split('-').map(Number)
-                            const date = new Date(year, month - 1, day)
-                            return date.toLocaleDateString('ko-KR', { 
-                              month: 'long', 
-                              day: 'numeric'
-                            })
-                          })()}
-                        </span>
-                        {!isToday() && (
-                          <button
-                            onClick={goToToday}
-                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                          >
-                            오늘
-                          </button>
-                        )}
-                      </div>
-                      <button
-                        onClick={goToNextDay}
-                        className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition-colors"
-                        title="다음 날짜"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                    </div>
+                    <Link
+                      href={`/workspace/${workspaceId}/sodeod`}
+                      className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                    >
+                      전체보기 →
+                    </Link>
                   </div>
-                  <Link
-                    href={`/workspace/${workspaceId}/sodeod`}
-                    className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
-                  >
-                    전체보기 →
-                  </Link>
+                  
+                  {/* 두 번째 줄: 날짜 네비게이터 (중앙 정렬) */}
+                  <div className="flex items-center justify-center gap-2">
+                    <button
+                      onClick={goToPreviousDay}
+                      className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition-colors"
+                      title="이전 날짜"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800 rounded-md min-w-[140px] justify-center">
+                      <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                        {(() => {
+                          const [year, month, day] = selectedDate.split('-').map(Number)
+                          const date = new Date(year, month - 1, day)
+                          return date.toLocaleDateString('ko-KR', { 
+                            month: 'long', 
+                            day: 'numeric'
+                          })
+                        })()}
+                      </span>
+                      {!isToday() && (
+                        <button
+                          onClick={goToToday}
+                          className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          오늘
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      onClick={goToNextDay}
+                      className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition-colors"
+                      title="다음 날짜"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
 
                 {loadingSods ? (
