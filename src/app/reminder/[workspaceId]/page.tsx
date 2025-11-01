@@ -17,6 +17,7 @@ export default function ReminderPage() {
   const [error, setError] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [showEndedReminders, setShowEndedReminders] = useState(false)
 
   useEffect(() => {
     const init = async () => {
@@ -59,6 +60,32 @@ export default function ReminderPage() {
       setError(e instanceof Error ? e.message : '일정 삭제에 실패했습니다.')
     }
   }
+
+  // 서울 시간 기준으로 종료된 일정과 진행 중/예정 일정 분리
+  const getSeoulNow = () => {
+    const now = new Date()
+    return new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+  }
+
+  const separateReminders = () => {
+    const seoulNow = getSeoulNow()
+    
+    const active: Reminder[] = []
+    const ended: Reminder[] = []
+
+    reminders.forEach(reminder => {
+      const endDate = new Date(reminder.end)
+      if (endDate <= seoulNow) {
+        ended.push(reminder)
+      } else {
+        active.push(reminder)
+      }
+    })
+
+    return { active, ended }
+  }
+
+  const { active: activeReminders, ended: endedReminders } = separateReminders()
 
   return (
     <div className="min-h-screen bg-zinc-50 font-sans dark:bg-black">
@@ -106,13 +133,54 @@ export default function ReminderPage() {
               </div>
             )}
 
+            {/* 진행 중/예정 일정 */}
             {userId && (
-              <ReminderList 
-                reminders={reminders} 
-                loading={loading}
-                userId={userId}
-                onDelete={handleReminderDeleted}
-              />
+              <div>
+                <ReminderList 
+                  reminders={activeReminders} 
+                  loading={loading}
+                  userId={userId}
+                  onDelete={handleReminderDeleted}
+                />
+
+                {/* 종료된 일정 섹션 */}
+                {endedReminders.length > 0 && (
+                  <div className="mt-8 pt-8 border-t border-zinc-200 dark:border-zinc-800">
+                    <button
+                      onClick={() => setShowEndedReminders(!showEndedReminders)}
+                      className="w-full flex items-center justify-between mb-4 px-2 py-1.5 rounded-md text-left group hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-semibold text-zinc-700 dark:text-zinc-300">
+                          종료된 일정
+                        </h3>
+                        <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                          ({endedReminders.length})
+                        </span>
+                      </div>
+                      <svg 
+                        className={`w-5 h-5 text-zinc-500 dark:text-zinc-400 transition-transform duration-200 ${showEndedReminders ? 'rotate-180' : ''}`}
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
+                    {showEndedReminders && (
+                      <div className="opacity-75">
+                        <ReminderList 
+                          reminders={endedReminders} 
+                          loading={false}
+                          userId={userId}
+                          onDelete={handleReminderDeleted}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
