@@ -76,10 +76,10 @@ export default function ReminderPage() {
                 </p>
               </div>
               <Link
-                href="/"
+                href={`/workspace/${workspaceId}`}
                 className="px-3 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
               >
-                ← 홈으로
+                ← 워크스페이스로
               </Link>
             </div>
           </div>
