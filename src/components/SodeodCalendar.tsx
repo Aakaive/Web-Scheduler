@@ -199,40 +199,21 @@ export default function SodeodCalendar({ onDateSelect, workspaceId, userId }: So
             ? 'bg-orange-100/60 dark:bg-orange-900/30'
             : 'bg-green-100/60 dark:bg-green-900/30'
 
+          // 텍스트 색상: 배경색과 같은 계통의 진한 색상
+          const textColorClass = !isCurrentMonthDate || stat.total === 0
+            ? 'text-zinc-500 dark:text-zinc-400'
+            : percent < 34
+            ? 'text-red-600 dark:text-red-400'
+            : percent < 67
+            ? 'text-orange-600 dark:text-orange-400'
+            : 'text-green-600 dark:text-green-500'
+
           const isHoliday = isCurrentMonthDate && isKoreanPublicHolidaySolar(date)
 
-          // 달성률 표시 포맷 결정: 100.0% (6자) > 100% (4자) > 75.0% (5자) > 75% (3자)
-          const getPercentDisplay = () => {
-            if (loadingStats && isCurrentMonthDate) return '…'
-            
-            const fullText = `${percent.toFixed(1)}%` // 예: "75.0%"
-            const shortText = `${Math.round(percent)}%` // 예: "75%"
-            
-            // 100% 이상인 경우 항상 정수로 표시
-            if (percent >= 100) {
-              return shortText
-            }
-            
-            // 길이가 긴 경우 (10.0% ~ 99.9%) 소숫점 포함
-            // 짧은 경우나 딱 떨어지는 경우 정수로 표시
-            if (percent % 1 === 0) {
-              return shortText
-            }
-            
-            return fullText
-          }
-
-          const percentDisplay = getPercentDisplay()
-          
-          // 텍스트 길이에 따른 반응형 폰트 크기 조정
-          const getFontSizeClass = () => {
-            // 모바일에서는 더 작은 폰트 사용, 길이에 따라 단계적으로 축소
-            if (percentDisplay.length <= 2) return 'text-xs sm:text-sm' // 5%, 9% 등
-            if (percentDisplay.length <= 3) return 'text-[0.7rem] sm:text-sm' // 10%, 75% 등 (11.2px -> 14px)
-            if (percentDisplay.length <= 4) return 'text-[0.65rem] sm:text-xs' // 100% 등 (10.4px -> 12px)
-            if (percentDisplay.length <= 5) return 'text-[0.6rem] sm:text-xs' // 75.5%, 33.3% 등 (9.6px -> 12px)
-            return 'text-[0.55rem] sm:text-[0.65rem]' // 100.0% 등 (8.8px -> 10.4px)
-          }
+          // 달성률 표시: 항상 정수로 표시
+          const percentDisplay = loadingStats && isCurrentMonthDate 
+            ? '…' 
+            : `${Math.round(percent)}%`
 
           return (
             <button
@@ -256,7 +237,7 @@ export default function SodeodCalendar({ onDateSelect, workspaceId, userId }: So
               </span>
               {/* 중앙: 퍼센트 (SoD가 있을 때만 표시) */}
               {stat.total > 0 && (
-                <span className={`flex items-center justify-center h-full px-1 font-medium text-zinc-500 dark:text-zinc-400 ${getFontSizeClass()}`}>
+                <span className={`flex items-center justify-center h-full px-1 font-medium ${textColorClass} text-[0.65rem] sm:text-xs`}>
                   {percentDisplay}
                 </span>
               )}
