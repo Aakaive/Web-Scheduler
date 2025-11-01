@@ -39,8 +39,13 @@ export default function SodeodCalendar({ onDateSelect, workspaceId, userId }: So
     current.setDate(current.getDate() + 1)
   }
 
-  // YYYY-MM-DD 헬퍼
-  const toYmd = (d: Date) => d.toISOString().split('T')[0]
+  // YYYY-MM-DD 헬퍼 (로컬 시간대 기준)
+  const toYmd = (d: Date) => {
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
 
   // 대한민국 기준 양력(고정) 공휴일 판별 (설/추석/부처님오신날 등 음력 기반은 제외)
   const isKoreanPublicHolidaySolar = (d: Date) => {
