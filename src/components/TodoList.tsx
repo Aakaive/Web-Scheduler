@@ -96,48 +96,16 @@ export default function TodoList({ todos, loading, userId, onDelete, onToggle, o
         </div>
       ) : (
         // 일반 보기 모드
-        <div className="flex items-start gap-3">
-          <input
-            type="checkbox"
-            checked={todo.completed}
-            onChange={(e) => onToggle(todo.id, e.target.checked)}
-            className="mt-1 w-5 h-5 rounded border-zinc-300 dark:border-zinc-700 text-purple-600 focus:ring-purple-500 cursor-pointer"
-          />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start gap-2 mb-1">
-              <h3
-                className={`text-base font-medium ${
-                  todo.completed
-                    ? 'line-through text-zinc-500 dark:text-zinc-600'
-                    : 'text-zinc-900 dark:text-zinc-100'
-                }`}
-              >
-                {todo.summary}
-              </h3>
-              {todo.is_pinned && (
-                <span className="text-purple-600 dark:text-purple-400 shrink-0" title="고정됨">
-                  <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v4.997a.31.31 0 0 1-.068.113c-.08.098-.213.207-.378.301-.947.543-1.713 1.54-2.191 2.488A6.237 6.237 0 0 0 4.82 14.4c-.1.48-.138 1.031.018 1.539C5.12 16.846 6.02 17 6.414 17H11v3a1 1 0 1 0 2 0v-3h4.586c.395 0 1.295-.154 1.575-1.061.156-.508.118-1.059.017-1.539a6.241 6.241 0 0 0-.541-1.5c-.479-.95-1.244-1.946-2.191-2.489a1.393 1.393 0 0 1-.378-.301.309.309 0 0 1-.068-.113V5h1a1 1 0 1 0 0-2H7a1 1 0 1 0 0 2h1Z"/>
-                  </svg>
-                </span>
-              )}
-            </div>
-            {todo.expression && (
-              <p
-                className={`text-sm whitespace-pre-wrap ${
-                  todo.completed
-                    ? 'text-zinc-400 dark:text-zinc-600'
-                    : 'text-zinc-600 dark:text-zinc-400'
-                }`}
-              >
-                {todo.expression}
-              </p>
-            )}
-            <div className="mt-2 text-xs text-zinc-400 dark:text-zinc-600">
-              생성: {new Date(todo.created_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}
-            </div>
-          </div>
-          <div className="flex gap-1">
+        <div className="space-y-3">
+          {/* 첫 번째 줄: 체크박스와 버튼들 */}
+          <div className="flex items-center justify-between gap-3">
+            <input
+              type="checkbox"
+              checked={todo.completed}
+              onChange={(e) => onToggle(todo.id, e.target.checked)}
+              className="w-5 h-5 rounded border-zinc-300 dark:border-zinc-700 text-purple-600 focus:ring-purple-500 cursor-pointer shrink-0"
+            />
+            <div className="flex gap-1 ml-auto">
             {!todo.completed && (
               <>
                 <button
@@ -192,6 +160,43 @@ export default function TodoList({ todos, loading, userId, onDelete, onToggle, o
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </button>
+          </div>
+          </div>
+
+          {/* 두 번째 줄: Summary, 고정 아이콘, Expression, 생성일 */}
+          <div className="space-y-2">
+            <div className="flex items-start gap-2">
+              <h3
+                className={`text-base font-medium flex-1 ${
+                  todo.completed
+                    ? 'line-through text-zinc-500 dark:text-zinc-600'
+                    : 'text-zinc-900 dark:text-zinc-100'
+                }`}
+              >
+                {todo.summary}
+              </h3>
+              {todo.is_pinned && (
+                <span className="text-purple-600 dark:text-purple-400 shrink-0" title="고정됨">
+                  <svg className="w-4 h-4" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v4.997a.31.31 0 0 1-.068.113c-.08.098-.213.207-.378.301-.947.543-1.713 1.54-2.191 2.488A6.237 6.237 0 0 0 4.82 14.4c-.1.48-.138 1.031.018 1.539C5.12 16.846 6.02 17 6.414 17H11v3a1 1 0 1 0 2 0v-3h4.586c.395 0 1.295-.154 1.575-1.061.156-.508.118-1.059.017-1.539a6.241 6.241 0 0 0-.541-1.5c-.479-.95-1.244-1.946-2.191-2.489a1.393 1.393 0 0 1-.378-.301.309.309 0 0 1-.068-.113V5h1a1 1 0 1 0 0-2H7a1 1 0 1 0 0 2h1Z"/>
+                  </svg>
+                </span>
+              )}
+            </div>
+            {todo.expression && (
+              <p
+                className={`text-sm whitespace-pre-wrap ${
+                  todo.completed
+                    ? 'text-zinc-400 dark:text-zinc-600'
+                    : 'text-zinc-600 dark:text-zinc-400'
+                }`}
+              >
+                {todo.expression}
+              </p>
+            )}
+            <div className="text-xs text-zinc-400 dark:text-zinc-600">
+              생성: {new Date(todo.created_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}
+            </div>
           </div>
         </div>
       )}
