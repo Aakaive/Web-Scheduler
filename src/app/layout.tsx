@@ -35,8 +35,8 @@ export default function RootLayout({
           <AuthUrlCleaner />
         </Suspense>
         <header className="w-full border-b border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-black/70 backdrop-blur">
-          <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-6">
-            <Link href="/" className="text-sm font-medium text-zinc-800 dark:text-zinc-100">
+          <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-3 sm:gap-6">
+            <Link href="/" className="text-sm font-medium text-zinc-800 dark:text-zinc-100 whitespace-nowrap">
               Web Scheduler
             </Link>
             <AuthPanel />

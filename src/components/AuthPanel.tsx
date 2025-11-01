@@ -181,8 +181,8 @@ export default function AuthPanel() {
   }
 
   return (
-    <div className="flex items-center gap-3">
-      <span className="text-sm text-zinc-900 dark:text-zinc-100">{user.email}</span>
+    <div className="flex items-center gap-2 sm:gap-3">
+      <span className="hidden sm:inline text-sm text-zinc-900 dark:text-zinc-100">{user.email}</span>
       <button
         onClick={handleSignOut}
         disabled={signingOut}
