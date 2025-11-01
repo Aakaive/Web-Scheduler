@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { supabase, getTodosByWorkspace, Todo } from '@/lib/supabase'
 import Link from 'next/link'
 
 interface Workspace {
@@ -22,6 +22,8 @@ export default function WorkspacePage() {
   const [error, setError] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false)
+  const [inProgressTodos, setInProgressTodos] = useState<Todo[]>([])
+  const [loadingTodos, setLoadingTodos] = useState(true)
 
   useEffect(() => {
     const init = async () => {
@@ -35,6 +37,7 @@ export default function WorkspacePage() {
   useEffect(() => {
     if (!userId || !workspaceId) return
     fetchWorkspace()
+    fetchInProgressTodos()
   }, [userId, workspaceId])
 
   const fetchWorkspace = async () => {
@@ -62,6 +65,20 @@ export default function WorkspacePage() {
       setError(e instanceof Error ? e.message : '워크스페이스를 불러오지 못했어요')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchInProgressTodos = async () => {
+    try {
+      setLoadingTodos(true)
+      const data = await getTodosByWorkspace(workspaceId)
+      // 진행중인 항목만 필터링하고 최대 5개까지만 가져오기
+      const inProgress = data.filter(todo => !todo.completed).slice(0, 5)
+      setInProgressTodos(inProgress)
+    } catch (e) {
+      console.error('Failed to fetch todos:', e)
+    } finally {
+      setLoadingTodos(false)
     }
   }
 
@@ -231,16 +248,76 @@ export default function WorkspacePage() {
             </aside>
 
             {/* 우측 컨텐츠 영역 */}
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 space-y-6">
+              {/* 진행중인 ToDo 섹션 */}
+              <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 py-3 px-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                    <span>📝</span>
+                    <span>ToDo</span>
+                  </h2>
+                  <Link
+                    href={`/todo/${workspaceId}`}
+                    className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
+                  >
+                    전체보기 →
+                  </Link>
+                </div>
+
+                {loadingTodos ? (
+                  <div className="flex items-center justify-center py-12 text-zinc-500 dark:text-zinc-400">
+                    할 일을 불러오는 중...
+                  </div>
+                ) : inProgressTodos.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-4xl mb-3">✅</div>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                      진행중인 할 일이 없습니다.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto -mx-6 px-6">
+                    <div className="flex gap-4 min-w-min pb-2">
+                      {inProgressTodos.map(todo => (
+                        <div
+                          key={todo.id}
+                          className="shrink-0 w-64 p-4 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:border-purple-300 dark:hover:border-purple-600 hover:bg-purple-50/50 dark:hover:bg-purple-900/10 transition-all cursor-pointer"
+                          onClick={() => router.push(`/todo/${workspaceId}`)}
+                        >
+                          <div className="flex items-start gap-2 mb-2">
+                            <h3 className="text-base font-medium text-zinc-900 dark:text-zinc-100 flex-1 line-clamp-2">
+                              {todo.summary}
+                            </h3>
+                            {todo.is_pinned && (
+                              <span className="text-yellow-500 shrink-0" title="고정됨">
+                                📌
+                              </span>
+                            )}
+                          </div>
+                          {todo.expression && (
+                            <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-3 mb-3">
+                              {todo.expression}
+                            </p>
+                          )}
+                          <div className="text-xs text-zinc-400 dark:text-zinc-600">
+                            {new Date(todo.created_at).toLocaleDateString('ko-KR', { 
+                              month: 'short', 
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 다른 컨텐츠 영역 */}
               <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
                 <div className="text-center py-12">
-                  <div className="text-4xl mb-4">📊</div>
-                  <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100 mb-2">
-                    컨텐츠 영역
-                  </h3>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                    여기에 다른 컨텐츠를 배치할 수 있습니다.
-                  </p>
+
                 </div>
               </div>
             </div>
