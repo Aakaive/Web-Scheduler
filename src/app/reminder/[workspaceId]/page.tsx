@@ -89,7 +89,7 @@ export default function ReminderPage() {
 
   return (
     <div className="min-h-screen bg-zinc-50 font-sans dark:bg-black">
-      <main className="container mx-auto py-10">
+      <main className="container mx-auto py-10 px-4">
         <div className="max-w-4xl mx-auto">
           {/* 헤더 */}
           <div className="mb-8">
