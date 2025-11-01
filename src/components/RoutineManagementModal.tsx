@@ -314,7 +314,7 @@ export default function RoutineManagementModal({
 
   const handleApply = async (routine: Routine) => {
     const dayNames = routine.repeat_days.map(d => weekDays[d]).join(', ')
-    if (!confirm(`"${routine.title}" 루틴을 ${year}년 ${month + 1}월에 적용하시겠습니까?\n\n반복 요일: ${dayNames}`)) {
+    if (!confirm(`"${routine.title}" 루틴을 ${year}년 ${month + 1}월에 적용하시겠습니까?\n\n반복 요일: ${dayNames}\n\n※ 오늘부터 월말까지만 적용됩니다. (과거 날짜는 제외)`)) {
       return
     }
 
@@ -322,7 +322,7 @@ export default function RoutineManagementModal({
       setSaving(true)
       setError(null)
       const count = await applyRoutineToMonth(routine, year, month, workspaceId, userId)
-      alert(`${count}개의 SoD가 생성되었습니다.`)
+      alert(`${count}개의 SoD가 생성되었습니다. (오늘부터 월말까지)`)
       if (onRoutineApplied) {
         onRoutineApplied()
       }
@@ -334,7 +334,7 @@ export default function RoutineManagementModal({
   }
 
   const handleRemove = async (routine: Routine) => {
-    if (!confirm(`"${routine.title}" 루틴을 ${year}년 ${month + 1}월에서 해제하시겠습니까?\n\n해당 루틴으로 생성된 모든 SoD가 삭제됩니다.`)) {
+    if (!confirm(`"${routine.title}" 루틴을 ${year}년 ${month + 1}월에서 해제하시겠습니까?\n\n내일 이후의 루틴만 삭제됩니다. (오늘과 과거 날짜는 유지됩니다)`)) {
       return
     }
 
@@ -342,7 +342,7 @@ export default function RoutineManagementModal({
       setSaving(true)
       setError(null)
       await removeRoutineFromMonth(routine.id, year, month, workspaceId, userId)
-      alert('루틴이 해제되었습니다.')
+      alert('루틴이 해제되었습니다. (내일 이후 날짜만 삭제)')
       if (onRoutineApplied) {
         onRoutineApplied()
       }

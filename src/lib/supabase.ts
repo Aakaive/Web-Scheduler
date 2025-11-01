@@ -443,7 +443,7 @@ export const deleteRoutine = async (routineId: string, userId: string) => {
   }
 }
 
-// 특정 월에 루틴 적용하기 (SoD 생성)
+// 특정 월에 루틴 적용하기 (SoD 생성 - 오늘부터 월말까지)
 export const applyRoutineToMonth = async (
   routine: Routine,
   year: number,
@@ -451,6 +451,10 @@ export const applyRoutineToMonth = async (
   workspaceId: string,
   userId: string
 ) => {
+  // 오늘 날짜
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  
   const firstDay = new Date(year, month, 1)
   const lastDay = new Date(year, month + 1, 0)
   
@@ -458,6 +462,13 @@ export const applyRoutineToMonth = async (
   
   for (let day = 1; day <= lastDay.getDate(); day++) {
     const date = new Date(year, month, day)
+    date.setHours(0, 0, 0, 0)
+    
+    // 오늘 이전 날짜는 건너뛰기
+    if (date < today) {
+      continue
+    }
+    
     const dayOfWeek = date.getDay()
     
     // 선택된 요일인 경우
@@ -495,7 +506,7 @@ export const applyRoutineToMonth = async (
   return sodsToCreate.length
 }
 
-// 특정 월에서 루틴 해제하기 (해당 루틴으로 생성된 SoD 삭제)
+// 특정 월에서 루틴 해제하기 (해당 루틴으로 생성된 SoD 삭제 - 미래 날짜만)
 export const removeRoutineFromMonth = async (
   routineId: string,
   year: number,
@@ -503,7 +514,15 @@ export const removeRoutineFromMonth = async (
   workspaceId: string,
   userId: string
 ) => {
-  const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`
+  // 오늘 날짜 (YYYY-MM-DD 형식)
+  const today = new Date()
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+  
+  // 오늘보다 이후 날짜 계산 (내일부터)
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`
+  
   const lastDay = new Date(year, month + 1, 0).getDate()
   const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
   
@@ -513,7 +532,7 @@ export const removeRoutineFromMonth = async (
     .eq('workspace_id', workspaceId)
     .eq('user_id', userId)
     .eq('routine_id', routineId)
-    .gte('date', startDate)
+    .gte('date', tomorrowStr)  // 내일 이후 날짜만 삭제
     .lte('date', endDate)
   
   if (error) {

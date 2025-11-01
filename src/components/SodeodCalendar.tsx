@@ -234,10 +234,18 @@ export default function SodeodCalendar({ onDateSelect, workspaceId, userId, onMo
           const stat = statsByDate[dayKey] || { total: 0, checked: 0 }
           const percent = stat.total === 0 ? 0 : Math.round((stat.checked / stat.total) * 1000) / 10
 
+          // 오늘 날짜 (시간 제외)
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+          const currentDateOnly = new Date(date)
+          currentDateOnly.setHours(0, 0, 0, 0)
+          const isPastOrToday = currentDateOnly <= today
+
           // 색상 구간: SoD가 없으면 배경 없음, 있으면 달성률에 따라 낮음(빨강), 중간(주황), 높음(초록)
+          // 단, 오늘 이후 날짜는 배경 없음
           const intensityClass = !isCurrentMonthDate
             ? ''
-            : stat.total === 0
+            : stat.total === 0 || !isPastOrToday
             ? ''
             : percent < 34
             ? 'bg-red-100/60 dark:bg-red-900/30'
@@ -246,7 +254,8 @@ export default function SodeodCalendar({ onDateSelect, workspaceId, userId, onMo
             : 'bg-green-100/60 dark:bg-green-900/30'
 
           // 텍스트 색상: 배경색과 같은 계통의 진한 색상
-          const textColorClass = !isCurrentMonthDate || stat.total === 0
+          // 단, 오늘 이후 날짜는 기본 색상
+          const textColorClass = !isCurrentMonthDate || stat.total === 0 || !isPastOrToday
             ? 'text-zinc-500 dark:text-zinc-400'
             : percent < 34
             ? 'text-red-600 dark:text-red-400'
@@ -256,7 +265,7 @@ export default function SodeodCalendar({ onDateSelect, workspaceId, userId, onMo
 
           const isHoliday = isCurrentMonthDate && isKoreanPublicHoliday(date)
 
-          // 달성률 표시: 항상 정수로 표시
+          // 달성률 표시: 항상 정수로 표시 (오늘 이후 날짜는 표시하지 않음)
           const percentDisplay = loadingStats && isCurrentMonthDate 
             ? '…' 
             : `${Math.round(percent)}%`
@@ -281,8 +290,8 @@ export default function SodeodCalendar({ onDateSelect, workspaceId, userId, onMo
               <span className={`absolute top-1 left-1 text-xs ${isHoliday ? 'text-red-600 dark:text-red-400' : ''}`}>
                 {date.getDate()}
               </span>
-              {/* 중앙: 퍼센트 (SoD가 있을 때만 표시) */}
-              {stat.total > 0 && (
+              {/* 중앙: 퍼센트 (SoD가 있고 오늘 이전 날짜일 때만 표시) */}
+              {stat.total > 0 && isPastOrToday && (
                 <span className={`flex items-center justify-center h-full px-1 font-medium ${textColorClass} text-[0.65rem] sm:text-xs`}>
                   {percentDisplay}
                 </span>

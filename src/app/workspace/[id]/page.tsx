@@ -638,7 +638,14 @@ export default function WorkspacePage() {
                                       ? 'line-through text-zinc-500 dark:text-zinc-600'
                                       : 'text-zinc-900 dark:text-zinc-100'
                                   }`}>
-                                    {sod.summary}
+                                    {sod.summary.startsWith('(루틴)') ? (
+                                      <>
+                                        <span className="text-purple-600 dark:text-purple-400">(루틴)</span>
+                                        {sod.summary.substring(4)}
+                                      </>
+                                    ) : (
+                                      sod.summary
+                                    )}
                                   </h3>
                                 )}
                               </div>
