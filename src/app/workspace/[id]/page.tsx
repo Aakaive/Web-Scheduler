@@ -266,7 +266,7 @@ export default function WorkspacePage() {
               <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 md:sticky md:top-10">
                 {/* 태블릿/데스크톱: 메뉴 제목 + 토글 버튼 */}
                 <div className="hidden md:flex items-center justify-between mb-2">
-                  <h2 className={`text-sm font-semibold text-zinc-700 dark:text-zinc-300 px-2 ${!isSidebarExpanded ? 'md:hidden lg:block' : ''}`}>
+                  <h2 className={`text-sm font-semibold text-zinc-700 dark:text-zinc-300 px-2 whitespace-nowrap ${!isSidebarExpanded ? 'md:hidden lg:block' : ''}`}>
                     메뉴
                   </h2>
                   <button
@@ -291,18 +291,20 @@ export default function WorkspacePage() {
                     onClick={() => {
                       router.push(`/todo/${workspaceId}`)
                     }}
-                    className="flex-1 md:flex-initial md:w-full p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-purple-300 dark:hover:border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200 group text-left"
+                    className="flex-1 md:flex-initial md:w-full md:h-[70px] p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-purple-300 dark:hover:border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200 group text-left"
                     title="ToDo"
                   >
-                    <div className={`flex flex-col items-center gap-2 ${isSidebarExpanded ? 'md:flex-row md:gap-3' : 'md:flex-col md:gap-2'} lg:flex-row lg:gap-3`}>
-                      <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50 transition-colors shrink-0">
-                        <span className="text-lg">📝</span>
+                    <div className={`flex items-center h-full ${isSidebarExpanded ? 'md:flex-row md:gap-3' : 'md:flex-col md:gap-2'} lg:flex-row lg:gap-3`}>
+                      <div className={`flex items-center justify-center shrink-0 ${isSidebarExpanded ? 'md:w-10' : 'md:w-full'} lg:w-10`}>
+                        <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50 transition-colors shrink-0">
+                          <span className="text-lg">📝</span>
+                        </div>
                       </div>
                       <div className={`flex-1 min-w-0 overflow-hidden text-center ${isSidebarExpanded ? 'md:text-left' : 'md:text-center'} lg:text-left ${!isSidebarExpanded ? 'md:hidden lg:block' : ''}`}>
-                        <h3 className="font-medium text-zinc-900 dark:text-zinc-100 text-sm">
+                        <h3 className="font-medium text-zinc-900 dark:text-zinc-100 text-sm whitespace-nowrap">
                           ToDo
                         </h3>
-                        <p className={`text-xs text-zinc-500 dark:text-zinc-400 truncate ${isSidebarExpanded ? 'md:block' : 'md:hidden'} lg:block hidden`}>
+                        <p className={`text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap ${isSidebarExpanded ? 'md:block' : 'md:hidden'} lg:block hidden`}>
                           할 일 목록 관리
                         </p>
                       </div>
@@ -314,18 +316,20 @@ export default function WorkspacePage() {
                     onClick={() => {
                       router.push(`/reminder/${workspaceId}`)
                     }}
-                    className="flex-1 md:flex-initial md:w-full p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-green-300 dark:hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200 group text-left"
+                    className="flex-1 md:flex-initial md:w-full md:h-[70px] p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-green-300 dark:hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200 group text-left"
                     title="일정 리마인더"
                   >
-                    <div className={`flex flex-col items-center gap-2 ${isSidebarExpanded ? 'md:flex-row md:gap-3' : 'md:flex-col md:gap-2'} lg:flex-row lg:gap-3`}>
-                      <div className="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center group-hover:bg-green-200 dark:group-hover:bg-green-900/50 transition-colors shrink-0">
-                        <span className="text-lg">⏰</span>
+                    <div className={`flex items-center h-full ${isSidebarExpanded ? 'md:flex-row md:gap-3' : 'md:flex-col md:gap-2'} lg:flex-row lg:gap-3`}>
+                      <div className={`flex items-center justify-center shrink-0 ${isSidebarExpanded ? 'md:w-10' : 'md:w-full'} lg:w-10`}>
+                        <div className="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center group-hover:bg-green-200 dark:group-hover:bg-green-900/50 transition-colors shrink-0">
+                          <span className="text-lg">⏰</span>
+                        </div>
                       </div>
                       <div className={`flex-1 min-w-0 overflow-hidden text-center ${isSidebarExpanded ? 'md:text-left' : 'md:text-center'} lg:text-left ${!isSidebarExpanded ? 'md:hidden lg:block' : ''}`}>
-                        <h3 className="font-medium text-zinc-900 dark:text-zinc-100 text-sm">
+                        <h3 className="font-medium text-zinc-900 dark:text-zinc-100 text-sm whitespace-nowrap">
                           리마인더
                         </h3>
-                        <p className={`text-xs text-zinc-500 dark:text-zinc-400 truncate ${isSidebarExpanded ? 'md:block' : 'md:hidden'} lg:block hidden`}>
+                        <p className={`text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap ${isSidebarExpanded ? 'md:block' : 'md:hidden'} lg:block hidden`}>
                           알림 및 리마인더 설정
                         </p>
                       </div>
@@ -337,18 +341,20 @@ export default function WorkspacePage() {
                     onClick={() => {
                       router.push(`/workspace/${workspaceId}/sodeod`)
                     }}
-                    className="flex-1 md:flex-initial md:w-full p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 group text-left"
+                    className="flex-1 md:flex-initial md:w-full md:h-[70px] p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 group text-left"
                     title="SoD/EoD"
                   >
-                    <div className={`flex flex-col items-center gap-2 ${isSidebarExpanded ? 'md:flex-row md:gap-3' : 'md:flex-col md:gap-2'} lg:flex-row lg:gap-3`}>
-                      <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors shrink-0">
-                        <span className="text-lg">🌅</span>
+                    <div className={`flex items-center h-full ${isSidebarExpanded ? 'md:flex-row md:gap-3' : 'md:flex-col md:gap-2'} lg:flex-row lg:gap-3`}>
+                      <div className={`flex items-center justify-center shrink-0 ${isSidebarExpanded ? 'md:w-10' : 'md:w-full'} lg:w-10`}>
+                        <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors shrink-0">
+                          <span className="text-lg">🌅</span>
+                        </div>
                       </div>
                       <div className={`flex-1 min-w-0 overflow-hidden text-center ${isSidebarExpanded ? 'md:text-left' : 'md:text-center'} lg:text-left ${!isSidebarExpanded ? 'md:hidden lg:block' : ''}`}>
-                        <h3 className="font-medium text-zinc-900 dark:text-zinc-100 text-sm">
+                        <h3 className="font-medium text-zinc-900 dark:text-zinc-100 text-sm whitespace-nowrap">
                           SoD/EoD
                         </h3>
-                        <p className={`text-xs text-zinc-500 dark:text-zinc-400 truncate ${isSidebarExpanded ? 'md:block' : 'md:hidden'} lg:block hidden`}>
+                        <p className={`text-xs text-zinc-500 dark:text-zinc-400 whitespace-nowrap ${isSidebarExpanded ? 'md:block' : 'md:hidden'} lg:block hidden`}>
                           시작/종료 일정 관리
                         </p>
                       </div>
