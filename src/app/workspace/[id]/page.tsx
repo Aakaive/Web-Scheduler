@@ -68,7 +68,7 @@ export default function WorkspacePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-zinc-50 font-sans dark:bg-black">
-        <main className="container mx-auto py-10">
+        <main className="container mx-auto py-10 px-4">
           <div className="flex items-center justify-center">
             <div className="text-lg text-zinc-600 dark:text-zinc-400">
               워크스페이스를 불러오는 중...
@@ -82,7 +82,7 @@ export default function WorkspacePage() {
   if (error || !workspace) {
     return (
       <div className="min-h-screen bg-zinc-50 font-sans dark:bg-black">
-        <main className="container mx-auto py-10">
+        <main className="container mx-auto py-10 px-4">
           <div className="flex flex-col items-center justify-center">
             <div className="text-lg text-red-600 dark:text-red-400 mb-4">
               {error || '워크스페이스를 찾을 수 없습니다.'}
@@ -101,7 +101,7 @@ export default function WorkspacePage() {
 
   return (
     <div className="min-h-screen bg-zinc-50 font-sans dark:bg-black">
-      <main className="container mx-auto py-10">
+      <main className="container mx-auto py-10 px-4">
         <div className="max-w-7xl mx-auto">
           {/* 워크스페이스 헤더 */}
           <div className="mb-8">
