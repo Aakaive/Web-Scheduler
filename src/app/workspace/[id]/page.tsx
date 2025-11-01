@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { supabase, getTodosByWorkspace, Todo } from '@/lib/supabase'
+import { supabase, getTodosByWorkspace, Todo, getRemindersByWorkspace, Reminder } from '@/lib/supabase'
 import Link from 'next/link'
 
 interface Workspace {
@@ -24,6 +24,8 @@ export default function WorkspacePage() {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false)
   const [inProgressTodos, setInProgressTodos] = useState<Todo[]>([])
   const [loadingTodos, setLoadingTodos] = useState(true)
+  const [todayReminders, setTodayReminders] = useState<Reminder[]>([])
+  const [loadingReminders, setLoadingReminders] = useState(true)
 
   useEffect(() => {
     const init = async () => {
@@ -38,6 +40,7 @@ export default function WorkspacePage() {
     if (!userId || !workspaceId) return
     fetchWorkspace()
     fetchInProgressTodos()
+    fetchTodayReminders()
   }, [userId, workspaceId])
 
   const fetchWorkspace = async () => {
@@ -79,6 +82,46 @@ export default function WorkspacePage() {
       console.error('Failed to fetch todos:', e)
     } finally {
       setLoadingTodos(false)
+    }
+  }
+
+  const fetchTodayReminders = async () => {
+    try {
+      setLoadingReminders(true)
+      const data = await getRemindersByWorkspace(workspaceId)
+      
+      // 서울 시간 기준 현재 날짜와 시간
+      const now = new Date()
+      const seoulNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+      const todayStart = new Date(seoulNow)
+      todayStart.setHours(0, 0, 0, 0)
+      const todayEnd = new Date(seoulNow)
+      todayEnd.setHours(23, 59, 59, 999)
+      
+      // 오늘 시작하고 아직 종료되지 않은 일정만 필터링
+      const today = data.filter(reminder => {
+        const startDate = new Date(reminder.start)
+        const endDate = new Date(reminder.end)
+        
+        // 시작 시간이 오늘인지 확인
+        const isStartToday = startDate >= todayStart && startDate <= todayEnd
+        
+        // 종료 시간이 아직 지나지 않았는지 확인
+        const isNotEnded = endDate > seoulNow
+        
+        return isStartToday && isNotEnded
+      })
+      
+      // 시작 시간 순으로 정렬하고 최대 5개
+      const sorted = today.sort((a, b) => 
+        new Date(a.start).getTime() - new Date(b.start).getTime()
+      ).slice(0, 5)
+      
+      setTodayReminders(sorted)
+    } catch (e) {
+      console.error('Failed to fetch reminders:', e)
+    } finally {
+      setLoadingReminders(false)
     }
   }
 
@@ -309,6 +352,85 @@ export default function WorkspacePage() {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 오늘의 일정 섹션 */}
+              <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 py-3 px-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                    <span>⏰</span>
+                    <span>오늘의 일정</span>
+                  </h2>
+                  <Link
+                    href={`/reminder/${workspaceId}`}
+                    className="text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors"
+                  >
+                    전체보기 →
+                  </Link>
+                </div>
+
+                {loadingReminders ? (
+                  <div className="flex items-center justify-center py-12 text-zinc-500 dark:text-zinc-400">
+                    일정을 불러오는 중...
+                  </div>
+                ) : todayReminders.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-4xl mb-3">📅</div>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                      오늘 예정된 일정이 없습니다.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto -mx-6 px-6">
+                    <div className="flex gap-4 min-w-min pb-2">
+                      {todayReminders.map(reminder => {
+                        const startDate = new Date(reminder.start)
+                        const endDate = new Date(reminder.end)
+                        const startTime = startDate.toLocaleTimeString('ko-KR', { 
+                          hour: '2-digit', 
+                          minute: '2-digit',
+                          timeZone: 'Asia/Seoul'
+                        })
+                        const endTime = endDate.toLocaleTimeString('ko-KR', { 
+                          hour: '2-digit', 
+                          minute: '2-digit',
+                          timeZone: 'Asia/Seoul'
+                        })
+                        
+                        return (
+                          <div
+                            key={reminder.id}
+                            className="shrink-0 w-64 p-4 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:border-green-300 dark:hover:border-green-600 hover:bg-green-50/50 dark:hover:bg-green-900/10 transition-all cursor-pointer"
+                            onClick={() => router.push(`/reminder/${workspaceId}`)}
+                          >
+                            <div className="mb-2">
+                              <h3 className="text-base font-medium text-zinc-900 dark:text-zinc-100 line-clamp-2 mb-1">
+                                {reminder.summary}
+                              </h3>
+                              <div className="text-sm text-green-600 dark:text-green-400 font-medium">
+                                {startTime} - {endTime}
+                              </div>
+                            </div>
+                            {reminder.expression && (
+                              <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-3 mb-3">
+                                {reminder.expression}
+                              </p>
+                            )}
+                            <div className="text-xs text-zinc-400 dark:text-zinc-600">
+                              생성: {new Date(reminder.created_at).toLocaleDateString('ko-KR', { 
+                                month: 'short', 
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                timeZone: 'Asia/Seoul'
+                              })}
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
                 )}
