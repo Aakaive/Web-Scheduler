@@ -191,7 +191,7 @@ export default function SodeodCalendar({ onDateSelect, workspaceId, userId, onMo
           {onRoutineModalOpen && (
             <button
               onClick={onRoutineModalOpen}
-              className="px-3 py-2 text-sm bg-sky-600 hover:bg-sky-700 text-white rounded-md transition-colors"
+              className="px-3 py-2 text-sm font-semibold bg-sky-600 hover:bg-sky-700 text-white rounded-md transition-colors"
             >
               루틴 관리
             </button>

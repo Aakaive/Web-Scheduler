@@ -137,7 +137,7 @@ export default function TodoPage() {
               {userId && (
                 <button
                   onClick={() => setIsModalOpen(true)}
-                  className="px-4 py-2 text-sm bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+                  className="px-4 py-2 text-sm font-semibold bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
                 >
                   + 할 일 추가
                 </button>
