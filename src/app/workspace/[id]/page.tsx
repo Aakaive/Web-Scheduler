@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { supabase, getTodosByWorkspace, Todo, getRemindersByWorkspace, Reminder, getSodsByDate, Sod, updateSod } from '@/lib/supabase'
+import { supabase, getTodosByWorkspace, Todo, getRemindersByWorkspace, Reminder, getSodsByDate, Sod, updateSod, updateTodo } from '@/lib/supabase'
 import Link from 'next/link'
 
 interface Workspace {
@@ -186,6 +186,18 @@ export default function WorkspacePage() {
       fetchSods()
     } catch (e) {
       console.error('Failed to toggle SOD check:', e)
+    }
+  }
+
+  const handleTodoToggle = async (todoId: string, currentCompleted: boolean) => {
+    if (!userId) return
+    
+    try {
+      await updateTodo(todoId, userId, { completed: !currentCompleted })
+      // ToDo 목록 새로고침
+      fetchInProgressTodos()
+    } catch (e) {
+      console.error('Failed to toggle todo:', e)
     }
   }
 
@@ -391,28 +403,42 @@ export default function WorkspacePage() {
                           className="shrink-0 w-64 p-4 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:border-purple-300 dark:hover:border-purple-600 hover:bg-purple-50/50 dark:hover:bg-purple-900/10 transition-all cursor-pointer"
                           onClick={() => router.push(`/todo/${workspaceId}`)}
                         >
-                          <div className="flex items-start gap-2 mb-2">
-                            <h3 className="text-base font-medium text-zinc-900 dark:text-zinc-100 flex-1 line-clamp-2">
-                              {todo.summary}
-                            </h3>
-                            {todo.is_pinned && (
-                              <span className="text-yellow-500 shrink-0" title="고정됨">
-                                📌
-                              </span>
-                            )}
-                          </div>
-                          {todo.expression && (
-                            <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-3 mb-3">
-                              {todo.expression}
-                            </p>
-                          )}
-                          <div className="text-xs text-zinc-400 dark:text-zinc-600">
-                            {new Date(todo.created_at).toLocaleDateString('ko-KR', { 
-                              month: 'short', 
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                          <div className="flex items-start gap-3">
+                            <input
+                              type="checkbox"
+                              checked={todo.completed}
+                              onChange={(e) => {
+                                e.stopPropagation()
+                                handleTodoToggle(todo.id, todo.completed)
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              className="mt-1 w-5 h-5 rounded border-zinc-300 dark:border-zinc-700 text-purple-600 focus:ring-purple-500 cursor-pointer shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start gap-2 mb-2">
+                                <h3 className="text-base font-medium text-zinc-900 dark:text-zinc-100 flex-1 line-clamp-2">
+                                  {todo.summary}
+                                </h3>
+                                {todo.is_pinned && (
+                                  <span className="text-yellow-500 shrink-0" title="고정됨">
+                                    📌
+                                  </span>
+                                )}
+                              </div>
+                              {todo.expression && (
+                                <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-3 mb-3">
+                                  {todo.expression}
+                                </p>
+                              )}
+                              <div className="text-xs text-zinc-400 dark:text-zinc-600">
+                                {new Date(todo.created_at).toLocaleDateString('ko-KR', { 
+                                  month: 'short', 
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       ))}
