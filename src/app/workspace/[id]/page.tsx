@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { supabase, getTodosByWorkspace, Todo, getRemindersByWorkspace, Reminder, getSodsByDate, Sod, updateSod, updateTodo } from '@/lib/supabase'
 import Link from 'next/link'
 
 interface Workspace {
@@ -10,6 +10,12 @@ interface Workspace {
   user_id: string
   title: string
   created_at: string
+}
+
+// 서울 시간 기준 오늘 날짜를 YYYY-MM-DD 문자열로 반환하는 헬퍼 함수
+const getSeoulTodayString = () => {
+  const now = new Date()
+  return now.toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
 }
 
 export default function WorkspacePage() {
@@ -22,6 +28,13 @@ export default function WorkspacePage() {
   const [error, setError] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false)
+  const [inProgressTodos, setInProgressTodos] = useState<Todo[]>([])
+  const [loadingTodos, setLoadingTodos] = useState(true)
+  const [todayReminders, setTodayReminders] = useState<Reminder[]>([])
+  const [loadingReminders, setLoadingReminders] = useState(true)
+  const [selectedDate, setSelectedDate] = useState<string>(getSeoulTodayString())
+  const [sods, setSods] = useState<Sod[]>([])
+  const [loadingSods, setLoadingSods] = useState(true)
 
   useEffect(() => {
     const init = async () => {
@@ -35,7 +48,14 @@ export default function WorkspacePage() {
   useEffect(() => {
     if (!userId || !workspaceId) return
     fetchWorkspace()
+    fetchInProgressTodos()
+    fetchTodayReminders()
   }, [userId, workspaceId])
+
+  useEffect(() => {
+    if (!userId || !workspaceId) return
+    fetchSods()
+  }, [userId, workspaceId, selectedDate])
 
   const fetchWorkspace = async () => {
     try {
@@ -62,6 +82,122 @@ export default function WorkspacePage() {
       setError(e instanceof Error ? e.message : '워크스페이스를 불러오지 못했어요')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchInProgressTodos = async () => {
+    try {
+      setLoadingTodos(true)
+      const data = await getTodosByWorkspace(workspaceId)
+      // 진행중인 항목만 필터링하고 최대 5개까지만 가져오기
+      const inProgress = data.filter(todo => !todo.completed).slice(0, 5)
+      setInProgressTodos(inProgress)
+    } catch (e) {
+      console.error('Failed to fetch todos:', e)
+    } finally {
+      setLoadingTodos(false)
+    }
+  }
+
+  const fetchTodayReminders = async () => {
+    try {
+      setLoadingReminders(true)
+      const data = await getRemindersByWorkspace(workspaceId)
+      
+      // 서울 시간 기준 현재 날짜와 시간
+      const now = new Date()
+      const seoulNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+      const todayStart = new Date(seoulNow)
+      todayStart.setHours(0, 0, 0, 0)
+      const todayEnd = new Date(seoulNow)
+      todayEnd.setHours(23, 59, 59, 999)
+      
+      // 오늘 시작하고 아직 종료되지 않은 일정만 필터링
+      const today = data.filter(reminder => {
+        const startDate = new Date(reminder.start)
+        const endDate = new Date(reminder.end)
+        
+        // 시작 시간이 오늘인지 확인
+        const isStartToday = startDate >= todayStart && startDate <= todayEnd
+        
+        // 종료 시간이 아직 지나지 않았는지 확인
+        const isNotEnded = endDate > seoulNow
+        
+        return isStartToday && isNotEnded
+      })
+      
+      // 시작 시간 순으로 정렬하고 최대 5개
+      const sorted = today.sort((a, b) => 
+        new Date(a.start).getTime() - new Date(b.start).getTime()
+      ).slice(0, 5)
+      
+      setTodayReminders(sorted)
+    } catch (e) {
+      console.error('Failed to fetch reminders:', e)
+    } finally {
+      setLoadingReminders(false)
+    }
+  }
+
+  const fetchSods = async () => {
+    if (!userId) return
+    
+    try {
+      setLoadingSods(true)
+      const data = await getSodsByDate(workspaceId, userId, selectedDate)
+      setSods(data)
+    } catch (e) {
+      console.error('Failed to fetch SODs:', e)
+    } finally {
+      setLoadingSods(false)
+    }
+  }
+
+  const goToPreviousDay = () => {
+    const [year, month, day] = selectedDate.split('-').map(Number)
+    const date = new Date(year, month - 1, day)
+    date.setDate(date.getDate() - 1)
+    const newDateStr = date.toLocaleDateString('en-CA')
+    setSelectedDate(newDateStr)
+  }
+
+  const goToNextDay = () => {
+    const [year, month, day] = selectedDate.split('-').map(Number)
+    const date = new Date(year, month - 1, day)
+    date.setDate(date.getDate() + 1)
+    const newDateStr = date.toLocaleDateString('en-CA')
+    setSelectedDate(newDateStr)
+  }
+
+  const goToToday = () => {
+    setSelectedDate(getSeoulTodayString())
+  }
+
+  const isToday = () => {
+    return selectedDate === getSeoulTodayString()
+  }
+
+  const handleSodCheckToggle = async (sodId: string, currentCheck: boolean) => {
+    if (!userId) return
+    
+    try {
+      await updateSod(sodId, userId, { check: !currentCheck })
+      // SoD 목록 새로고침
+      fetchSods()
+    } catch (e) {
+      console.error('Failed to toggle SOD check:', e)
+    }
+  }
+
+  const handleTodoToggle = async (todoId: string, currentCompleted: boolean) => {
+    if (!userId) return
+    
+    try {
+      await updateTodo(todoId, userId, { completed: !currentCompleted })
+      // ToDo 목록 새로고침
+      fetchInProgressTodos()
+    } catch (e) {
+      console.error('Failed to toggle todo:', e)
     }
   }
 
@@ -231,17 +367,302 @@ export default function WorkspacePage() {
             </aside>
 
             {/* 우측 컨텐츠 영역 */}
-            <div className="flex-1 min-w-0">
-              <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
-                <div className="text-center py-12">
-                  <div className="text-4xl mb-4">📊</div>
-                  <h3 className="text-lg font-medium text-zinc-900 dark:text-zinc-100 mb-2">
-                    컨텐츠 영역
-                  </h3>
-                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                    여기에 다른 컨텐츠를 배치할 수 있습니다.
-                  </p>
+            <div className="flex-1 min-w-0 space-y-6">
+              {/* 진행중인 ToDo 섹션 */}
+              <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 py-3 px-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                    <span>📝</span>
+                    <span>ToDo</span>
+                  </h2>
+                  <Link
+                    href={`/todo/${workspaceId}`}
+                    className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
+                  >
+                    전체보기 →
+                  </Link>
                 </div>
+
+                {loadingTodos ? (
+                  <div className="flex items-center justify-center py-12 text-zinc-500 dark:text-zinc-400">
+                    할 일을 불러오는 중...
+                  </div>
+                ) : inProgressTodos.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-4xl mb-3">✅</div>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                      진행중인 할 일이 없습니다.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto -mx-6 px-6">
+                    <div className="flex gap-4 min-w-min pb-2">
+                      {inProgressTodos.map(todo => (
+                        <div
+                          key={todo.id}
+                          className="shrink-0 w-64 p-4 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:border-purple-300 dark:hover:border-purple-600 hover:bg-purple-50/50 dark:hover:bg-purple-900/10 transition-all cursor-pointer"
+                          onClick={() => router.push(`/todo/${workspaceId}`)}
+                        >
+                          <div className="flex items-start gap-3">
+                            <input
+                              type="checkbox"
+                              checked={todo.completed}
+                              onChange={(e) => {
+                                e.stopPropagation()
+                                handleTodoToggle(todo.id, todo.completed)
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              className="mt-1 w-5 h-5 rounded border-zinc-300 dark:border-zinc-700 text-purple-600 focus:ring-purple-500 cursor-pointer shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start gap-2 mb-2">
+                                <h3 className="text-base font-medium text-zinc-900 dark:text-zinc-100 flex-1 line-clamp-2">
+                                  {todo.summary}
+                                </h3>
+                                {todo.is_pinned && (
+                                  <span className="text-yellow-500 shrink-0" title="고정됨">
+                                    📌
+                                  </span>
+                                )}
+                              </div>
+                              {todo.expression && (
+                                <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-3 mb-3">
+                                  {todo.expression}
+                                </p>
+                              )}
+                              <div className="text-xs text-zinc-400 dark:text-zinc-600">
+                                {new Date(todo.created_at).toLocaleDateString('ko-KR', { 
+                                  month: 'short', 
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 오늘의 일정 섹션 */}
+              <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 py-3 px-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                    <span>⏰</span>
+                    <span>오늘의 일정</span>
+                  </h2>
+                  <Link
+                    href={`/reminder/${workspaceId}`}
+                    className="text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors"
+                  >
+                    전체보기 →
+                  </Link>
+                </div>
+
+                {loadingReminders ? (
+                  <div className="flex items-center justify-center py-12 text-zinc-500 dark:text-zinc-400">
+                    일정을 불러오는 중...
+                  </div>
+                ) : todayReminders.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-4xl mb-3">📅</div>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                      오늘 예정된 일정이 없습니다.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto -mx-6 px-6">
+                    <div className="flex gap-4 min-w-min pb-2">
+                      {todayReminders.map(reminder => {
+                        const startDate = new Date(reminder.start)
+                        const endDate = new Date(reminder.end)
+                        const startTime = startDate.toLocaleTimeString('ko-KR', { 
+                          hour: '2-digit', 
+                          minute: '2-digit',
+                          timeZone: 'Asia/Seoul'
+                        })
+                        const endTime = endDate.toLocaleTimeString('ko-KR', { 
+                          hour: '2-digit', 
+                          minute: '2-digit',
+                          timeZone: 'Asia/Seoul'
+                        })
+                        
+                        return (
+                          <div
+                            key={reminder.id}
+                            className="shrink-0 w-64 p-4 border border-zinc-200 dark:border-zinc-800 rounded-lg hover:border-green-300 dark:hover:border-green-600 hover:bg-green-50/50 dark:hover:bg-green-900/10 transition-all cursor-pointer"
+                            onClick={() => router.push(`/reminder/${workspaceId}`)}
+                          >
+                            <div className="mb-2">
+                              <h3 className="text-base font-medium text-zinc-900 dark:text-zinc-100 line-clamp-2 mb-1">
+                                {reminder.summary}
+                              </h3>
+                              <div className="text-sm text-green-600 dark:text-green-400 font-medium">
+                                {startTime} - {endTime}
+                              </div>
+                            </div>
+                            {reminder.expression && (
+                              <p className="text-sm text-zinc-600 dark:text-zinc-400 line-clamp-3 mb-3">
+                                {reminder.expression}
+                              </p>
+                            )}
+                            <div className="text-xs text-zinc-400 dark:text-zinc-600">
+                              생성: {new Date(reminder.created_at).toLocaleDateString('ko-KR', { 
+                                month: 'short', 
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                timeZone: 'Asia/Seoul'
+                              })}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* SoD 섹션 */}
+              <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 py-3 px-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                      <span>🌅</span>
+                      <span>SoD</span>
+                    </h2>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={goToPreviousDay}
+                        className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition-colors"
+                        title="이전 날짜"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-50 dark:bg-zinc-800 rounded-md min-w-[140px] justify-center">
+                        <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                          {(() => {
+                            const [year, month, day] = selectedDate.split('-').map(Number)
+                            const date = new Date(year, month - 1, day)
+                            return date.toLocaleDateString('ko-KR', { 
+                              month: 'long', 
+                              day: 'numeric'
+                            })
+                          })()}
+                        </span>
+                        {!isToday() && (
+                          <button
+                            onClick={goToToday}
+                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                          >
+                            오늘
+                          </button>
+                        )}
+                      </div>
+                      <button
+                        onClick={goToNextDay}
+                        className="p-1.5 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition-colors"
+                        title="다음 날짜"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <Link
+                    href={`/workspace/${workspaceId}/sodeod`}
+                    className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                  >
+                    전체보기 →
+                  </Link>
+                </div>
+
+                {loadingSods ? (
+                  <div className="flex items-center justify-center py-12 text-zinc-500 dark:text-zinc-400">
+                    SoD를 불러오는 중...
+                  </div>
+                ) : sods.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-4xl mb-3">📋</div>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                      이 날짜에 등록된 SoD가 없습니다.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {sods.map(sod => {
+                      const startTime = sod.start_at 
+                        ? sod.start_at.substring(0, 5) // HH:MM만 추출
+                        : '시간 미정'
+                      const endTime = sod.end_at 
+                        ? sod.end_at.substring(0, 5) // HH:MM만 추출
+                        : '시간 미정'
+                      
+                      return (
+                        <div
+                          key={sod.id}
+                          className={`p-4 border rounded-lg transition-all cursor-pointer ${
+                            sod.check
+                              ? 'border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800/50'
+                              : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50/50 dark:hover:bg-blue-900/10'
+                          }`}
+                          onClick={() => router.push(`/workspace/${workspaceId}/sodeod`)}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div 
+                              className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 cursor-pointer ${
+                                sod.check
+                                  ? 'border-blue-500 bg-blue-500'
+                                  : 'border-zinc-300 dark:border-zinc-700 hover:border-blue-400 dark:hover:border-blue-500'
+                              }`}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleSodCheckToggle(sod.id, sod.check)
+                              }}
+                            >
+                              {sod.check && (
+                                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start gap-2 mb-1">
+                                <div className="text-sm text-blue-600 dark:text-blue-400 font-medium shrink-0">
+                                  {startTime} - {endTime}
+                                </div>
+                                {sod.summary && (
+                                  <h3 className={`text-base font-medium flex-1 ${
+                                    sod.check
+                                      ? 'line-through text-zinc-500 dark:text-zinc-600'
+                                      : 'text-zinc-900 dark:text-zinc-100'
+                                  }`}>
+                                    {sod.summary}
+                                  </h3>
+                                )}
+                              </div>
+                              {sod.expression && (
+                                <p className={`text-sm whitespace-pre-wrap ${
+                                  sod.check
+                                    ? 'text-zinc-400 dark:text-zinc-600'
+                                    : 'text-zinc-600 dark:text-zinc-400'
+                                }`}>
+                                  {sod.expression}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>
