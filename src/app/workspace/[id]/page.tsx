@@ -402,7 +402,7 @@ export default function WorkspacePage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto -mx-6 px-6 scroll-on-hover">
+                  <div className="overflow-x-auto -mx-4 px-2 scroll-on-hover">
                     <div className="flex gap-4 min-w-min pb-2">
                       {inProgressTodos.map(todo => (
                         <div
@@ -492,7 +492,7 @@ export default function WorkspacePage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto -mx-6 px-6 scroll-on-hover">
+                  <div className="overflow-x-auto -mx-4 px-2 scroll-on-hover">
                     <div className="flex gap-4 min-w-min pb-2">
                       {todayReminders.map(reminder => {
                         const startDate = new Date(reminder.start)
