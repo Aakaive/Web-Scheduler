@@ -18,7 +18,7 @@ interface RoutineManagementModalProps {
   userId: string
   year: number
   month: number
-  onRoutineApplied?: () => void  // 루틴 적용 시 달력 새로고침용
+  onRoutineApplied?: () => void
 }
 
 export default function RoutineManagementModal({
@@ -30,7 +30,6 @@ export default function RoutineManagementModal({
   month,
   onRoutineApplied,
 }: RoutineManagementModalProps) {
-  // 24시간 형식(HH:MM)을 12시간 형식으로 변환
   const to12Hour = (hhmm: string | null) => {
     if (!hhmm) return { hour: 12, minute: 0, ampm: 'AM' as const }
     const [hh, mm] = hhmm.split(':').map(Number)
@@ -40,7 +39,6 @@ export default function RoutineManagementModal({
     return { hour: hh - 12, minute: mm, ampm: 'PM' as const }
   }
 
-  // 12시간 형식을 24시간 형식(HH:MM:SS)으로 변환
   const to24Hour = (hour: number, minute: number, ampm: 'AM' | 'PM'): string => {
     let h24 = hour
     if (ampm === 'PM' && hour !== 12) h24 = hour + 12
@@ -50,7 +48,6 @@ export default function RoutineManagementModal({
     return `${hh}:${mm}:00`
   }
 
-  // 시간 선택 컴포넌트
   const TimeSelector = ({
     hour, minute, ampm,
     onHourChange, onMinuteChange, onAmPmChange,
@@ -102,7 +99,6 @@ export default function RoutineManagementModal({
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   
-  // 입력 폼 상태
   const [title, setTitle] = useState<string>('')
   const [startHour, setStartHour] = useState<number>(9)
   const [startMinute, setStartMinute] = useState<number>(0)
@@ -115,7 +111,6 @@ export default function RoutineManagementModal({
   const [selectedDays, setSelectedDays] = useState<Set<number>>(new Set())
   const [saving, setSaving] = useState(false)
 
-  // 수정 모드
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState<string>('')
   const [editStartHour, setEditStartHour] = useState<number>(9)
@@ -172,7 +167,6 @@ export default function RoutineManagementModal({
 
   const handleAddClick = () => {
     setShowForm(true)
-    // 폼 초기화
     setTitle('')
     setStartHour(9)
     setStartMinute(0)
@@ -369,7 +363,6 @@ export default function RoutineManagementModal({
         className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 w-full max-w-4xl mx-4 shadow-xl max-h-[90vh] flex flex-col shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* 헤더 */}
         <div className="flex items-center justify-between p-6 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
           <div>
             <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
@@ -390,7 +383,6 @@ export default function RoutineManagementModal({
           </button>
         </div>
 
-        {/* 본문 - 스크롤 가능 */}
         <div className="flex-1 overflow-y-auto p-6">
           {error && (
             <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-red-600 dark:text-red-400 text-sm">
@@ -398,7 +390,6 @@ export default function RoutineManagementModal({
             </div>
           )}
 
-          {/* 추가 버튼 */}
           <div className="flex justify-center mb-6">
             <button
               onClick={handleAddClick}
@@ -412,7 +403,6 @@ export default function RoutineManagementModal({
             </button>
           </div>
 
-          {/* 루틴 추가 폼 */}
           {showForm && (
             <div className="mb-6 p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 space-y-4">
               <div>
@@ -527,7 +517,6 @@ export default function RoutineManagementModal({
             </div>
           )}
 
-          {/* 루틴 리스트 */}
           {loading ? (
             <div className="text-center py-8 text-zinc-600 dark:text-zinc-400">
               루틴을 불러오는 중...
@@ -544,7 +533,6 @@ export default function RoutineManagementModal({
                   className="p-4 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800"
                 >
                   {editingId === routine.id ? (
-                    // 수정 모드
                     <div className="space-y-3">
                       <div>
                         <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">루틴 이름 *</label>
@@ -642,7 +630,6 @@ export default function RoutineManagementModal({
                       </div>
                     </div>
                   ) : (
-                    // 조회 모드
                     <div>
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
@@ -695,7 +682,6 @@ export default function RoutineManagementModal({
                         </div>
                       </div>
 
-                      {/* 적용/해제 버튼 */}
                       <div className="flex gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-700">
                         <button
                           onClick={() => handleApply(routine)}

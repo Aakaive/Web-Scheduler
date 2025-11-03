@@ -1,4 +1,3 @@
-// Auth controls moved to header in layout
 import WorkspaceList from '@/components/WorkspaceList'
 
 export default function Home() {

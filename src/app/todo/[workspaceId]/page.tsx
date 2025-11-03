@@ -55,7 +55,7 @@ export default function TodoPage() {
     
     try {
       await deleteTodo(todoId, userId)
-      fetchTodos() // 목록 새로고침
+      fetchTodos()
     } catch (e) {
       setError(e instanceof Error ? e.message : '할 일 삭제에 실패했습니다.')
     }
@@ -66,7 +66,7 @@ export default function TodoPage() {
     
     try {
       await updateTodo(todoId, userId, { completed })
-      fetchTodos() // 목록 새로고침
+      fetchTodos()
     } catch (e) {
       setError(e instanceof Error ? e.message : '할 일 상태 변경에 실패했습니다.')
     }
@@ -77,7 +77,7 @@ export default function TodoPage() {
     
     try {
       await updateTodo(todoId, userId, { summary, expression })
-      fetchTodos() // 목록 새로고침
+      fetchTodos()
     } catch (e) {
       setError(e instanceof Error ? e.message : '할 일 수정에 실패했습니다.')
     }
@@ -88,7 +88,7 @@ export default function TodoPage() {
     
     try {
       await toggleTodoPin(todoId, userId, isPinned)
-      fetchTodos() // 목록 새로고침
+      fetchTodos()
     } catch (e) {
       setError(e instanceof Error ? e.message : '할 일 고정에 실패했습니다.')
     }
@@ -99,7 +99,7 @@ export default function TodoPage() {
     
     try {
       await upTodo(todoId, userId)
-      fetchTodos() // 목록 새로고침
+      fetchTodos()
     } catch (e) {
       setError(e instanceof Error ? e.message : '할 일 이동에 실패했습니다.')
     }
@@ -109,7 +109,6 @@ export default function TodoPage() {
     <div className="min-h-screen bg-zinc-50 font-sans dark:bg-black">
       <main className="container mx-auto py-10 px-4">
         <div className="max-w-7xl mx-auto">
-          {/* 헤더 */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4 gap-4">
               <div className="flex-1 min-w-0">
@@ -130,9 +129,7 @@ export default function TodoPage() {
             </div>
           </div>
 
-          {/* 레이아웃: 모바일은 세로, 태블릿/데스크톱은 좌측 네비게이터 + 우측 컨텐츠 */}
           <div className="flex flex-col md:flex-row gap-6">
-            {/* 네비게이터 */}
             <aside className={`shrink-0 transition-all duration-300 ${isSidebarExpanded ? 'md:w-64' : 'md:w-20'} lg:w-64`}>
               <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 md:sticky md:top-10">
                 <div className="hidden md:flex items-center justify-between mb-2">
@@ -156,7 +153,6 @@ export default function TodoPage() {
                 </div>
 
                 <nav className="flex md:flex-col gap-2 md:gap-1">
-                  {/* ToDo 버튼 */}
                   <button
                     onClick={() => router.push(`/todo/${workspaceId}`)}
                     className="flex-1 md:flex-initial md:w-full md:h-[70px] p-3 rounded-lg border-2 border-purple-400 dark:border-purple-500 bg-purple-50 dark:bg-purple-900/20 transition-all duration-200 group text-left"
@@ -181,7 +177,6 @@ export default function TodoPage() {
                     </div>
                   </button>
 
-                  {/* 일정 리마인더 버튼 */}
                   <button
                     onClick={() => router.push(`/reminder/${workspaceId}`)}
                     className="flex-1 md:flex-initial md:w-full md:h-[70px] p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-green-300 dark:hover:border-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200 group text-left"
@@ -206,7 +201,6 @@ export default function TodoPage() {
                     </div>
                   </button>
 
-                  {/* SoD/EoD 버튼 */}
                   <button
                     onClick={() => router.push(`/workspace/${workspaceId}/sodeod`)}
                     className="flex-1 md:flex-initial md:w-full md:h-[70px] p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200 group text-left"
@@ -234,9 +228,7 @@ export default function TodoPage() {
               </div>
             </aside>
 
-            {/* 우측 컨텐츠 영역 */}
             <div className="flex-1 min-w-0">
-              {/* 콘텐츠 영역 */}
               <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
@@ -276,7 +268,6 @@ export default function TodoPage() {
         </div>
       </main>
 
-      {/* ToDo 추가 모달 */}
       {userId && (
         <TodoModal
           isOpen={isModalOpen}

@@ -64,7 +64,6 @@ export default function TodoList({ todos, loading, userId, onDelete, onToggle, o
       }`}
     >
       {editingId === todo.id ? (
-        // 편집 모드
         <div className="space-y-3">
           <input
             type="text"
@@ -95,9 +94,7 @@ export default function TodoList({ todos, loading, userId, onDelete, onToggle, o
           </div>
         </div>
       ) : (
-        // 일반 보기 모드
         <div className="space-y-3">
-          {/* 첫 번째 줄: 체크박스와 버튼들 */}
           <div className="flex items-center justify-between gap-3">
             <input
               type="checkbox"
@@ -163,7 +160,6 @@ export default function TodoList({ todos, loading, userId, onDelete, onToggle, o
           </div>
           </div>
 
-          {/* 두 번째 줄: Summary, 고정 아이콘, Expression, 생성일 */}
           <div className="space-y-2">
             <div className="flex items-start gap-2">
               <h3
@@ -221,7 +217,6 @@ export default function TodoList({ todos, loading, userId, onDelete, onToggle, o
 
   return (
     <div className="space-y-6">
-      {/* 진행중 섹션 */}
       <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
         <button
           onClick={() => setShowInProgress(!showInProgress)}
@@ -252,7 +247,6 @@ export default function TodoList({ todos, loading, userId, onDelete, onToggle, o
         )}
       </div>
 
-      {/* 달성 섹션 */}
       <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
         <button
           onClick={() => setShowCompleted(!showCompleted)}

@@ -42,14 +42,9 @@ export default function ReminderModal({
       setLoading(true)
       setError(null)
 
-      // datetime-local 값을 서울 시간대로 변환
-      // datetime-local은 "YYYY-MM-DDTHH:MM" 형식이며, 브라우저가 로컬 시간으로 해석
-      // 한국에서는 이미 KST(UTC+9)로 해석되므로, 이를 UTC로 변환해 저장
-      // 예: "2024-01-15T14:30" (KST 14:30) -> "2024-01-15T05:30:00.000Z" (UTC 05:30)
       const startISO = start ? new Date(start).toISOString() : start
       const endISO = end ? new Date(end).toISOString() : end
 
-      // Supabase에 리마인더 추가
       const reminder: Omit<Reminder, 'id' | 'created_at'> = {
         summary,
         start: startISO,
@@ -62,14 +57,10 @@ export default function ReminderModal({
 
       const createdReminder = await createReminder(reminder)
 
-      // Supabase 세션에서 갱신된 Google 토큰 가져오기
       const googleToken = await getRefreshedGoogleToken()
-      
-      console.log('Google token available:', !!googleToken)
       
       let googleEventId = null
       
-      // 구글 캘린더에 일정 추가 (토큰이 있는 경우에만)
       if (googleToken) {
         try {
           const calendarResponse = await fetch('/api/calendar', {
@@ -90,20 +81,16 @@ export default function ReminderModal({
             const errorData = await calendarResponse.json()
             console.error('Failed to add to Google Calendar:', errorData)
             
-            // 토큰 만료로 인한 401 에러인 경우
             if (errorData.needsReauth) {
               alert('구글 로그인이 만료되었습니다. 다시 로그인해주세요.')
-              // 로그아웃 처리
               await supabase.auth.signOut()
               window.location.reload()
               return
             }
             
-            // 기타 에러
             alert(`일정은 저장되었지만 구글 캘린더에 추가하지 못했습니다: ${errorData.error}`)
           } else {
             const result = await calendarResponse.json()
-            console.log('Successfully added to Google Calendar:', result)
             googleEventId = result.event?.id
           }
         } catch (calendarError) {
@@ -111,24 +98,20 @@ export default function ReminderModal({
           alert('일정은 저장되었지만 구글 캘린더 API 호출 중 오류가 발생했습니다.')
         }
       } else {
-        console.warn('Google token not available, skipping calendar sync')
         alert('구글 로그인이 필요합니다. 일정은 저장되었지만 구글 캘린더에는 추가되지 않았습니다.')
       }
       
-      // Google event ID를 Supabase에 업데이트
       if (googleEventId && createdReminder.id) {
         try {
           await supabase
             .from('reminders')
             .update({ google_event_id: googleEventId })
             .eq('id', createdReminder.id)
-          console.log('Google event ID saved to database')
         } catch (updateError) {
           console.error('Failed to save Google event ID:', updateError)
         }
       }
 
-      // 폼 초기화
       setSummary('')
       setStart('')
       setEnd('')

@@ -12,7 +12,6 @@ interface Workspace {
   created_at: string
 }
 
-// 서울 시간 기준 오늘 날짜를 YYYY-MM-DD 문자열로 반환하는 헬퍼 함수
 const getSeoulTodayString = () => {
   const now = new Date()
   return now.toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
@@ -89,7 +88,6 @@ export default function WorkspacePage() {
     try {
       setLoadingTodos(true)
       const data = await getTodosByWorkspace(workspaceId)
-      // 진행중인 항목만 필터링하고 최대 5개까지만 가져오기
       const inProgress = data.filter(todo => !todo.completed).slice(0, 5)
       setInProgressTodos(inProgress)
     } catch (e) {
@@ -104,7 +102,6 @@ export default function WorkspacePage() {
       setLoadingReminders(true)
       const data = await getRemindersByWorkspace(workspaceId)
       
-      // 서울 시간 기준 현재 날짜와 시간
       const now = new Date()
       const seoulNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
       const todayStart = new Date(seoulNow)
@@ -112,21 +109,17 @@ export default function WorkspacePage() {
       const todayEnd = new Date(seoulNow)
       todayEnd.setHours(23, 59, 59, 999)
       
-      // 오늘 시작하고 아직 종료되지 않은 일정만 필터링
       const today = data.filter(reminder => {
         const startDate = new Date(reminder.start)
         const endDate = new Date(reminder.end)
         
-        // 시작 시간이 오늘인지 확인
         const isStartToday = startDate >= todayStart && startDate <= todayEnd
         
-        // 종료 시간이 아직 지나지 않았는지 확인
         const isNotEnded = endDate > seoulNow
         
         return isStartToday && isNotEnded
       })
       
-      // 시작 시간 순으로 정렬하고 최대 5개
       const sorted = today.sort((a, b) => 
         new Date(a.start).getTime() - new Date(b.start).getTime()
       ).slice(0, 5)
@@ -182,7 +175,6 @@ export default function WorkspacePage() {
     
     try {
       await updateSod(sodId, userId, { check: !currentCheck })
-      // SoD 목록 새로고침
       fetchSods()
     } catch (e) {
       console.error('Failed to toggle SOD check:', e)
@@ -194,7 +186,6 @@ export default function WorkspacePage() {
     
     try {
       await updateTodo(todoId, userId, { completed: !currentCompleted })
-      // ToDo 목록 새로고침
       fetchInProgressTodos()
     } catch (e) {
       console.error('Failed to toggle todo:', e)
@@ -239,7 +230,6 @@ export default function WorkspacePage() {
     <div className="min-h-screen bg-zinc-50 font-sans dark:bg-black">
       <main className="container mx-auto py-10 px-4">
         <div className="max-w-7xl mx-auto">
-          {/* 워크스페이스 헤더 */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1 min-w-0">
@@ -260,12 +250,9 @@ export default function WorkspacePage() {
             </div>
           </div>
 
-          {/* 레이아웃: 모바일은 세로, 태블릿/데스크톱은 좌측 네비게이터 + 우측 컨텐츠 */}
           <div className="flex flex-col md:flex-row gap-6">
-            {/* 네비게이터 (모바일: 상단 가로, 태블릿: 좌측 아이콘만, 데스크톱: 좌측 전체) */}
             <aside className={`shrink-0 transition-all duration-300 ${isSidebarExpanded ? 'md:w-64' : 'md:w-20'} lg:w-64`}>
               <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 md:sticky md:top-10">
-                {/* 태블릿/데스크톱: 메뉴 제목 + 토글 버튼 */}
                 <div className="hidden md:flex items-center justify-between mb-2">
                   <h2 className={`text-sm font-semibold text-zinc-700 dark:text-zinc-300 px-2 whitespace-nowrap ${!isSidebarExpanded ? 'md:hidden lg:block' : ''}`}>
                     메뉴
@@ -287,7 +274,6 @@ export default function WorkspacePage() {
                 </div>
 
                 <nav className="flex md:flex-col gap-2 md:gap-1">
-                  {/* ToDo 버튼 */}
                   <button
                     onClick={() => {
                       router.push(`/todo/${workspaceId}`)
@@ -314,7 +300,6 @@ export default function WorkspacePage() {
                     </div>
                   </button>
 
-                  {/* 일정 리마인더 버튼 */}
                   <button
                     onClick={() => {
                       router.push(`/reminder/${workspaceId}`)
@@ -341,7 +326,6 @@ export default function WorkspacePage() {
                     </div>
                   </button>
 
-                  {/* SoD/EoD 버튼 */}
                   <button
                     onClick={() => {
                       router.push(`/workspace/${workspaceId}/sodeod`)
@@ -371,9 +355,7 @@ export default function WorkspacePage() {
               </div>
             </aside>
 
-            {/* 우측 컨텐츠 영역 */}
             <div className="flex-1 min-w-0 space-y-6">
-              {/* 진행중인 ToDo 섹션 */}
               <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 py-3 px-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
@@ -463,7 +445,6 @@ export default function WorkspacePage() {
                 )}
               </div>
 
-              {/* 오늘의 일정 섹션 */}
               <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 py-3 px-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
@@ -544,10 +525,8 @@ export default function WorkspacePage() {
                 )}
               </div>
 
-              {/* SoD 섹션 */}
               <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 py-3 px-6">
                 <div className="space-y-3 mb-4">
-                  {/* 첫 번째 줄: SoD 제목 + 전체보기 */}
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                       <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
@@ -563,7 +542,6 @@ export default function WorkspacePage() {
                     </Link>
                   </div>
                   
-                  {/* 두 번째 줄: 날짜 네비게이터 (중앙 정렬) */}
                   <div className="flex items-center justify-center gap-2">
                     <button
                       onClick={goToPreviousDay}

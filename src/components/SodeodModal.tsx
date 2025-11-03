@@ -18,7 +18,6 @@ export default function SodeodModal({
   workspaceId,
   userId,
 }: SodeodModalProps) {
-  // 24시간 형식(HH:MM)을 12시간 형식으로 변환
   const to12Hour = (hhmm: string | null) => {
     if (!hhmm) return { hour: 12, minute: 0, ampm: 'AM' as const }
     const [hh, mm] = hhmm.split(':').map(Number)
@@ -28,7 +27,6 @@ export default function SodeodModal({
     return { hour: hh - 12, minute: mm, ampm: 'PM' as const }
   }
 
-  // 12시간 형식을 24시간 형식(HH:MM:SS)으로 변환
   const to24Hour = (hour: number, minute: number, ampm: 'AM' | 'PM'): string => {
     let h24 = hour
     if (ampm === 'PM' && hour !== 12) h24 = hour + 12
@@ -38,7 +36,6 @@ export default function SodeodModal({
     return `${hh}:${mm}:00`
   }
 
-  // 시간 선택 컴포넌트 (시/분/오전-오후)
   const TimeSelector = ({
     hour, minute, ampm,
     onHourChange, onMinuteChange, onAmPmChange,
@@ -90,7 +87,6 @@ export default function SodeodModal({
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   
-  // 입력 폼 상태 (12시간 형식)
   const [startHour, setStartHour] = useState<number>(9)
   const [startMinute, setStartMinute] = useState<number>(0)
   const [startAmPm, setStartAmPm] = useState<'AM' | 'PM'>('AM')
@@ -111,7 +107,6 @@ export default function SodeodModal({
   const [editExpression, setEditExpression] = useState<string>('')
   const [copying, setCopying] = useState(false)
 
-  // 날짜 문자열 (YYYY-MM-DD) - 로컬 시간대 기준
   const dateStr = (() => {
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -141,7 +136,6 @@ export default function SodeodModal({
 
   const handleAddClick = () => {
     setShowForm(true)
-    // 폼 초기화
     setStartHour(9)
     setStartMinute(0)
     setStartAmPm('AM')
@@ -183,7 +177,6 @@ export default function SodeodModal({
         routine_id: null,
       })
 
-      // 폼 초기화 및 숨김
       setShowForm(false)
       setStartHour(9)
       setStartMinute(0)
@@ -194,7 +187,6 @@ export default function SodeodModal({
       setSummary('')
       setExpression('')
       
-      // SoD 리스트 새로고침
       await fetchSods()
     } catch (e) {
       setError(e instanceof Error ? e.message : '저장에 실패했습니다.')
@@ -206,7 +198,6 @@ export default function SodeodModal({
   const handleCheckChange = async (sodId: string, checked: boolean) => {
     try {
       await updateSod(sodId, userId, { check: checked })
-      // 리스트 새로고침
       await fetchSods()
     } catch (e) {
       setError(e instanceof Error ? e.message : '체크 상태 변경에 실패했습니다.')
@@ -228,7 +219,6 @@ export default function SodeodModal({
 
   const formatTime = (time: string | null) => {
     if (!time) return '-'
-    // HH:MM:SS 형식을 HH:MM으로 변환
     return time.substring(0, 5)
   }
 
@@ -322,7 +312,6 @@ export default function SodeodModal({
         className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 w-full max-w-2xl mx-4 shadow-xl max-h-[90vh] flex flex-col shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* 헤더 */}
         <div className="flex items-center justify-between p-6 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
           <div>
             <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
@@ -362,7 +351,6 @@ export default function SodeodModal({
           </div>
         </div>
 
-        {/* 본문 - 스크롤 가능 */}
         <div className="flex-1 overflow-y-auto p-6">
           {error && (
             <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-red-600 dark:text-red-400 text-sm">
@@ -370,7 +358,6 @@ export default function SodeodModal({
             </div>
           )}
 
-          {/* 추가 버튼 */}
           <div className="flex justify-center mb-6">
             <button
               onClick={handleAddClick}
@@ -384,7 +371,6 @@ export default function SodeodModal({
             </button>
           </div>
 
-          {/* 입력 폼 */}
           {showForm && (
             <div className="mb-6 p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 space-y-4">
               <div>
@@ -461,7 +447,6 @@ export default function SodeodModal({
             </div>
           )}
 
-          {/* SoD 리스트 */}
           {loading ? (
             <div className="text-center py-8 text-zinc-600 dark:text-zinc-400">
               데이터를 불러오는 중...
@@ -484,7 +469,6 @@ export default function SodeodModal({
                   `}
                 >
                   <div className="flex items-start gap-4">
-                    {/* 체크박스 */}
                     <input
                       type="checkbox"
                       checked={sod.check}
@@ -492,7 +476,6 @@ export default function SodeodModal({
                       className="mt-1 w-5 h-5 rounded border-zinc-300 dark:border-zinc-600 text-green-600 focus:ring-green-500 dark:focus:ring-green-400 cursor-pointer"
                     />
 
-                    {/* 내용 */}
                     <div className="flex-1">
                       {editingId === sod.id ? (
                         <div className="space-y-3">
@@ -583,7 +566,6 @@ export default function SodeodModal({
                       )}
                     </div>
 
-                    {/* 삭제 버튼 */}
                     <div className="flex flex-col items-end gap-1">
                       <button
                         onClick={() => (editingId === sod.id ? cancelEdit() : beginEdit(sod))}

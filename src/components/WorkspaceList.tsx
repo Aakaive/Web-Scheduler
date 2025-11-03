@@ -12,7 +12,6 @@ interface Workspace {
   created_at: string
 }
 
-// 이미지 아이콘 로드 실패 시 인라인 SVG로 대체하는 컴포넌트
 function EditNoteIcon() {
   return (
     <svg
@@ -43,7 +42,6 @@ export default function WorkspaceList() {
   const [error, setError] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  // 추가: 상태 for editing
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingTitle, setEditingTitle] = useState<string>("")
   const [updating, setUpdating] = useState(false)
@@ -54,7 +52,6 @@ export default function WorkspaceList() {
       const uid = data.user?.id ?? null
       setUserId(uid)
       
-      // 로그아웃 시 워크스페이스 목록 초기화
       if (!uid) {
         setWorkspaces([])
         setLoading(false)
@@ -62,12 +59,10 @@ export default function WorkspaceList() {
     }
     init()
 
-    // Auth state 변경 감지
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       const uid = session?.user?.id ?? null
       setUserId(uid)
       
-      // 로그아웃 시 워크스페이스 목록 초기화
       if (event === 'SIGNED_OUT' || !uid) {
         setWorkspaces([])
         setLoading(false)
@@ -119,7 +114,6 @@ export default function WorkspaceList() {
       if (data) {
         setWorkspaces(prev => [data as Workspace, ...prev])
       } else {
-        // fallback: refetch
         await fetchWorkspaces(userId)
       }
     } catch (e) {
@@ -129,7 +123,6 @@ export default function WorkspaceList() {
     }
   }
 
-  // 저장 처리 함수
   const handleSaveEdit = async (wsId: string) => {
     if (!userId || !editingTitle.trim()) return
     try {
@@ -202,7 +195,6 @@ export default function WorkspaceList() {
                     type="button"
                     style={{lineHeight:0,display:'inline-flex',alignItems:'center',justifyContent:'center'}}
                   >
-                    {/* 두꺼운 고딕 체크 SVG */}
                     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.7" strokeLinecap="round" strokeLinejoin="round" className="w-[17px] h-[17px] pointer-events-none">
                       <polyline points="4 11 9 16 16 6" />
                     </svg>
@@ -216,7 +208,6 @@ export default function WorkspaceList() {
                     type="button"
                     style={{lineHeight:0,display:'inline-flex',alignItems:'center',justifyContent:'center'}}
                   >
-                    {/* 두꺼운 고딕 X SVG */}
                     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.7" strokeLinecap="round" strokeLinejoin="round" className="w-[17px] h-[17px] pointer-events-none">
                       <line x1="5" y1="5" x2="15" y2="15" />
                       <line x1="15" y1="5" x2="5" y2="15" />
@@ -244,7 +235,7 @@ export default function WorkspaceList() {
             <div className="flex flex-col items-end pl-2">
               <button
                 onClick={async (e) => {
-                  e.stopPropagation() // 클릭 이벤트가 부모로 전파되지 않도록 방지
+                  e.stopPropagation()
                   if (!userId || deletingId) return
                   const ok = window.confirm('워크스페이스를 삭제하시겠습니까?')
                   if (!ok) return

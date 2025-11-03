@@ -69,24 +69,11 @@ export default function AuthPanel() {
       const currentUser = data.session?.user ?? null
       setUser(currentUser ? { email: currentUser.email ?? null } : null)
       
-      // provider_token을 localStorage에 저장
-      console.log('Session data:', {
-        hasSession: !!data.session,
-        hasProviderToken: !!data.session?.provider_token,
-        providerToken: data.session?.provider_token?.substring(0, 20) + '...',
-        hasProviderRefreshToken: !!data.session?.provider_refresh_token,
-        user: data.session?.user?.email
-      })
-      
       if (data.session?.provider_token) {
-        console.log('Storing provider_token from initial session to localStorage')
         localStorage.setItem('google_provider_token', data.session.provider_token)
-      } else {
-        console.warn('No provider_token in session')
       }
       
       if (data.session?.provider_refresh_token) {
-        console.log('Found provider_refresh_token, storing to localStorage')
         localStorage.setItem('google_provider_refresh_token', data.session.provider_refresh_token)
       }
       
@@ -100,9 +87,7 @@ export default function AuthPanel() {
       const u = session?.user ?? null
       setUser(u ? { email: u.email ?? null } : null)
       
-      // provider_token을 localStorage에 저장
       if (session?.provider_token) {
-        console.log('Storing provider_token from session to localStorage')
         localStorage.setItem('google_provider_token', session.provider_token)
       }
       
@@ -161,13 +146,11 @@ export default function AuthPanel() {
       setUser(null)
       ensuredRef.current = false
       
-      // localStorage 정리
       localStorage.removeItem('google_provider_token')
       localStorage.removeItem('google_provider_refresh_token')
       
       cleanAuthParamsFromUrl()
       
-      // 메인 페이지로 리디렉션 및 완전한 새로고침
       window.location.href = '/'
     } catch (error) {
       console.error('로그아웃 에러:', error)

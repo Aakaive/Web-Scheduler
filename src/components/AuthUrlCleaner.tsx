@@ -14,7 +14,6 @@ export default function AuthUrlCleaner() {
     const cleanQuery = async () => {
       const url = new URL(window.location.href)
       
-      // provider_token을 세션에 저장하기 전에 추출
       const providerToken = url.searchParams.get('provider_token')
       
       const keys = [
@@ -41,12 +40,8 @@ export default function AuthUrlCleaner() {
         window.history.replaceState(null, '', base)
       }
       
-      // provider_token이 있으면 localStorage에 저장
       if (providerToken) {
-        console.log('Found provider_token in URL (query), saving to localStorage')
         localStorage.setItem('google_provider_token', providerToken)
-      } else {
-        console.log('No provider_token found in URL query params')
       }
     }
 
@@ -55,7 +50,6 @@ export default function AuthUrlCleaner() {
       if (!raw) return
       const params = new URLSearchParams(raw)
       
-      // provider_token을 세션에 저장하기 전에 추출
       const providerToken = params.get('provider_token')
       
       const keys = [
@@ -82,12 +76,8 @@ export default function AuthUrlCleaner() {
         window.history.replaceState(null, '', base)
       }
       
-      // provider_token이 있으면 localStorage에 저장
       if (providerToken) {
-        console.log('Found provider_token in URL (hash), saving to localStorage')
         localStorage.setItem('google_provider_token', providerToken)
-      } else {
-        console.log('No provider_token found in URL hash')
       }
     }
 

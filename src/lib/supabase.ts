@@ -5,14 +5,12 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// 유저 테이블 타입 정의
 export interface User {
   id: string
   email: string
   created_at: string
 }
 
-// 리마인더 테이블 타입 정의
 export interface Reminder {
   id: string
   summary: string
@@ -25,24 +23,17 @@ export interface Reminder {
   google_event_id: string | null
 }
 
-// 유저 데이터 조회 함수들
 export const getUserData = async () => {
-  console.log('Fetching users from Supabase...')
-  console.log('Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
-  
   const { data, error } = await supabase
     .from('users')
     .select('*')
     .order('created_at', { ascending: false })
-
-  console.log('Supabase response:', { data, error })
 
   if (error) {
     console.error('Error fetching users:', error)
     throw error
   }
 
-  console.log('Returning data:', data)
   return data as User[]
 }
 
@@ -61,7 +52,6 @@ export const getUserById = async (id: string) => {
   return data as User
 }
 
-// 리마인더 데이터 조회 함수
 export const getRemindersByWorkspace = async (workspaceId: string) => {
   const { data, error } = await supabase
     .from('reminders')
@@ -77,7 +67,6 @@ export const getRemindersByWorkspace = async (workspaceId: string) => {
   return data as Reminder[]
 }
 
-// 리마인더 추가 함수
 export const createReminder = async (reminder: Omit<Reminder, 'id' | 'created_at'>) => {
   const { data, error } = await supabase
     .from('reminders')
@@ -93,7 +82,6 @@ export const createReminder = async (reminder: Omit<Reminder, 'id' | 'created_at
   return data as Reminder
 }
 
-// 리마인더 삭제 함수
 export const deleteReminder = async (reminderId: string, userId: string) => {
   const { error } = await supabase
     .from('reminders')
@@ -107,22 +95,20 @@ export const deleteReminder = async (reminderId: string, userId: string) => {
   }
 }
 
-// SoD 테이블 타입 정의
 export interface Sod {
   id: string
   workspace_id: string
   user_id: string
   created_at: string
-  date: string  // DATE 타입 (YYYY-MM-DD)
-  start_at: string | null  // TIME 타입 (HH:MM:SS)
-  end_at: string | null  // TIME 타입 (HH:MM:SS)
-  summary: string | null  // TEXT
-  expression: string | null  // TEXT
-  check: boolean  // BOOLEAN, default false
-  routine_id: string | null  // 루틴 ID (루틴으로 생성된 경우)
+  date: string
+  start_at: string | null
+  end_at: string | null
+  summary: string | null
+  expression: string | null
+  check: boolean
+  routine_id: string | null
 }
 
-// 루틴 테이블 타입 정의
 export interface Routine {
   id: string
   workspace_id: string
@@ -131,13 +117,12 @@ export interface Routine {
   title: string
   summary: string | null
   expression: string | null
-  start_at: string  // TIME 타입 (HH:MM:SS)
-  end_at: string | null  // TIME 타입 (HH:MM:SS)
-  repeat_days: number[]  // [0,1,2,3,4,5,6] - 0=일요일, 6=토요일
+  start_at: string
+  end_at: string | null
+  repeat_days: number[]
   is_active: boolean
 }
 
-// SoD 데이터 조회 함수 (날짜별)
 export const getSodsByDate = async (workspaceId: string, userId: string, date: string) => {
   const { data, error } = await supabase
     .from('sods')
@@ -155,7 +140,6 @@ export const getSodsByDate = async (workspaceId: string, userId: string, date: s
   return data as Sod[]
 }
 
-// SoD 추가 함수
 export const createSod = async (sod: Omit<Sod, 'id' | 'created_at' | 'check'>) => {
   const { data, error } = await supabase
     .from('sods')
@@ -171,7 +155,6 @@ export const createSod = async (sod: Omit<Sod, 'id' | 'created_at' | 'check'>) =
   return data as Sod
 }
 
-// SoD 업데이트 함수 (체크박스 등)
 export const updateSod = async (sodId: string, userId: string, updates: Partial<Sod>) => {
   const { data, error } = await supabase
     .from('sods')
@@ -189,7 +172,6 @@ export const updateSod = async (sodId: string, userId: string, updates: Partial<
   return data as Sod
 }
 
-// SoD 삭제 함수
 export const deleteSod = async (sodId: string, userId: string) => {
   const { error } = await supabase
     .from('sods')
@@ -203,12 +185,11 @@ export const deleteSod = async (sodId: string, userId: string) => {
   }
 }
 
-// SoD 범위 조회 (월 단위 통계 계산용)
 export const getSodsInRange = async (
   workspaceId: string,
   userId: string,
-  startDateInclusive: string, // 'YYYY-MM-DD'
-  endDateInclusive: string // 'YYYY-MM-DD'
+  startDateInclusive: string,
+  endDateInclusive: string
 ) => {
   const { data, error } = await supabase
     .from('sods')
@@ -228,7 +209,6 @@ export const getSodsInRange = async (
   return data as Sod[]
 }
 
-// ToDo 테이블 타입 정의
 export interface Todo {
   id: string
   workspace_id: string
@@ -242,7 +222,6 @@ export interface Todo {
   completed: boolean
 }
 
-// ToDo 데이터 조회 함수 (정렬: pinned > upped_at > created_at)
 export const getTodosByWorkspace = async (workspaceId: string) => {
   const { data, error } = await supabase
     .from('todos')
@@ -261,7 +240,6 @@ export const getTodosByWorkspace = async (workspaceId: string) => {
   return data as Todo[]
 }
 
-// ToDo 추가 함수
 export const createTodo = async (todo: Omit<Todo, 'id' | 'created_at' | 'completed' | 'is_pinned' | 'pinned_at' | 'upped_at'>) => {
   const { data, error } = await supabase
     .from('todos')
@@ -283,7 +261,6 @@ export const createTodo = async (todo: Omit<Todo, 'id' | 'created_at' | 'complet
   return data as Todo
 }
 
-// ToDo 업데이트 함수
 export const updateTodo = async (todoId: string, userId: string, updates: Partial<Todo>) => {
   const { data, error } = await supabase
     .from('todos')
@@ -301,7 +278,6 @@ export const updateTodo = async (todoId: string, userId: string, updates: Partia
   return data as Todo
 }
 
-// ToDo 삭제 함수
 export const deleteTodo = async (todoId: string, userId: string) => {
   const { error } = await supabase
     .from('todos')
@@ -315,7 +291,6 @@ export const deleteTodo = async (todoId: string, userId: string) => {
   }
 }
 
-// ToDo Pin 토글 함수
 export const toggleTodoPin = async (todoId: string, userId: string, isPinned: boolean) => {
   const updates: Partial<Todo> = {
     is_pinned: isPinned,
@@ -325,7 +300,6 @@ export const toggleTodoPin = async (todoId: string, userId: string, isPinned: bo
   return updateTodo(todoId, userId, updates)
 }
 
-// ToDo Up 함수 (upped_at 업데이트)
 export const upTodo = async (todoId: string, userId: string) => {
   const updates: Partial<Todo> = {
     upped_at: new Date().toISOString()
@@ -334,10 +308,8 @@ export const upTodo = async (todoId: string, userId: string) => {
   return updateTodo(todoId, userId, updates)
 }
 
-// Google OAuth 토큰 갱신 함수
 export const getRefreshedGoogleToken = async (): Promise<string | null> => {
   try {
-    // Supabase 세션을 가져오면 자동으로 토큰이 갱신됨
     const { data, error } = await supabase.auth.getSession()
     
     if (error) {
@@ -346,11 +318,9 @@ export const getRefreshedGoogleToken = async (): Promise<string | null> => {
     }
     
     if (!data.session) {
-      console.warn('No active session found')
       return null
     }
     
-    // provider_token이 갱신되었을 수 있으므로 localStorage에 업데이트
     if (data.session.provider_token) {
       if (typeof window !== 'undefined') {
         localStorage.setItem('google_provider_token', data.session.provider_token)
@@ -358,7 +328,6 @@ export const getRefreshedGoogleToken = async (): Promise<string | null> => {
       return data.session.provider_token
     }
     
-    console.warn('No provider_token in session')
     return null
   } catch (err) {
     console.error('Failed to refresh Google token:', err)
@@ -366,11 +335,6 @@ export const getRefreshedGoogleToken = async (): Promise<string | null> => {
   }
 }
 
-// ============================================
-// 루틴 관련 함수들
-// ============================================
-
-// 루틴 조회 함수 (워크스페이스별)
 export const getRoutinesByWorkspace = async (workspaceId: string, userId: string) => {
   const { data, error } = await supabase
     .from('routines')
@@ -387,7 +351,6 @@ export const getRoutinesByWorkspace = async (workspaceId: string, userId: string
   return data as Routine[]
 }
 
-// 루틴 생성 함수
 export const createRoutine = async (routine: Omit<Routine, 'id' | 'created_at' | 'is_active'>) => {
   const { data, error } = await supabase
     .from('routines')
@@ -403,7 +366,6 @@ export const createRoutine = async (routine: Omit<Routine, 'id' | 'created_at' |
   return data as Routine
 }
 
-// 루틴 수정 함수
 export const updateRoutine = async (routineId: string, userId: string, updates: Partial<Routine>) => {
   const { data, error } = await supabase
     .from('routines')
@@ -421,16 +383,13 @@ export const updateRoutine = async (routineId: string, userId: string, updates: 
   return data as Routine
 }
 
-// 루틴 삭제 함수
 export const deleteRoutine = async (routineId: string, userId: string) => {
-  // 먼저 관련된 SoD들의 routine_id를 null로 설정
   await supabase
     .from('sods')
     .update({ routine_id: null })
     .eq('routine_id', routineId)
     .eq('user_id', userId)
 
-  // 루틴 삭제
   const { error } = await supabase
     .from('routines')
     .delete()
@@ -443,7 +402,6 @@ export const deleteRoutine = async (routineId: string, userId: string) => {
   }
 }
 
-// 특정 월에 루틴 적용하기 (SoD 생성 - 오늘부터 월말까지)
 export const applyRoutineToMonth = async (
   routine: Routine,
   year: number,
@@ -451,7 +409,6 @@ export const applyRoutineToMonth = async (
   workspaceId: string,
   userId: string
 ) => {
-  // 오늘 날짜
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   
@@ -464,18 +421,15 @@ export const applyRoutineToMonth = async (
     const date = new Date(year, month, day)
     date.setHours(0, 0, 0, 0)
     
-    // 오늘 이전 날짜는 건너뛰기
     if (date < today) {
       continue
     }
     
     const dayOfWeek = date.getDay()
     
-    // 선택된 요일인 경우
     if (routine.repeat_days.includes(dayOfWeek)) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
       
-      // Summary에 (루틴) 접두어 추가
       const summaryText = routine.summary ? `(루틴) ${routine.summary}` : '(루틴)'
       
       sodsToCreate.push({
@@ -506,7 +460,6 @@ export const applyRoutineToMonth = async (
   return sodsToCreate.length
 }
 
-// 특정 월에서 루틴 해제하기 (해당 루틴으로 생성된 SoD 삭제 - 미래 날짜만)
 export const removeRoutineFromMonth = async (
   routineId: string,
   year: number,
@@ -514,11 +467,9 @@ export const removeRoutineFromMonth = async (
   workspaceId: string,
   userId: string
 ) => {
-  // 오늘 날짜 (YYYY-MM-DD 형식)
   const today = new Date()
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
   
-  // 오늘보다 이후 날짜 계산 (내일부터)
   const tomorrow = new Date(today)
   tomorrow.setDate(tomorrow.getDate() + 1)
   const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`
@@ -532,7 +483,7 @@ export const removeRoutineFromMonth = async (
     .eq('workspace_id', workspaceId)
     .eq('user_id', userId)
     .eq('routine_id', routineId)
-    .gte('date', tomorrowStr)  // 내일 이후 날짜만 삭제
+    .gte('date', tomorrowStr)
     .lte('date', endDate)
   
   if (error) {

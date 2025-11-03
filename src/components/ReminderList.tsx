@@ -13,10 +13,8 @@ export default function ReminderList({ reminders, loading, userId, onDelete }: R
   const handleDelete = async (reminderId: string, summary: string, googleEventId: string | null) => {
     const confirmed = window.confirm(`일정 "${summary}"을(를) 삭제하시겠습니까?`)
     if (confirmed) {
-      // Google Calendar에서 삭제 (event ID가 있는 경우)
       if (googleEventId) {
         try {
-          // Supabase 세션에서 갱신된 Google 토큰 가져오기
           const googleToken = await getRefreshedGoogleToken()
           if (googleToken) {
             const response = await fetch('/api/calendar', {
@@ -34,7 +32,6 @@ export default function ReminderList({ reminders, loading, userId, onDelete }: R
               const errorData = await response.json()
               console.error('Failed to delete from Google Calendar:', errorData)
               
-              // 토큰 만료로 인한 401 에러인 경우
               if (errorData.needsReauth) {
                 alert('구글 로그인이 만료되었습니다. 다시 로그인해주세요.')
                 await supabase.auth.signOut()
@@ -42,10 +39,7 @@ export default function ReminderList({ reminders, loading, userId, onDelete }: R
                 return
               }
               
-              // Supabase에서는 삭제하지만 경고 표시
               alert('일정은 삭제되었지만 구글 캘린더에서 삭제하지 못했습니다.')
-            } else {
-              console.log('Successfully deleted from Google Calendar')
             }
           }
         } catch (error) {

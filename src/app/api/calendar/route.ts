@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// 구글 캘린더에 일정 추가
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { summary, start, end, workspaceId, googleToken } = body
 
-    // 요청 본문에서 Google 토큰 가져오기
     const accessToken = googleToken
     
     if (!accessToken) {
@@ -16,7 +14,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 구글 캘린더 API를 통해 일정 추가
     const calendarResponse = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
       method: 'POST',
       headers: {
@@ -40,7 +37,6 @@ export async function POST(request: NextRequest) {
       const errorData = await calendarResponse.text()
       console.error('Google Calendar API error:', errorData)
       
-      // 401 Unauthorized: 토큰 만료 또는 권한 없음
       if (calendarResponse.status === 401) {
         return NextResponse.json(
           { 
@@ -78,7 +74,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// 구글 캘린더에서 일정 삭제
 export async function DELETE(request: NextRequest) {
   try {
     const body = await request.json()
@@ -93,7 +88,6 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // 구글 캘린더 API를 통해 일정 삭제
     const calendarResponse = await fetch(
       `https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`,
       {
@@ -108,7 +102,6 @@ export async function DELETE(request: NextRequest) {
       const errorData = await calendarResponse.text()
       console.error('Google Calendar API error:', errorData)
       
-      // 401 Unauthorized: 토큰 만료 또는 권한 없음
       if (calendarResponse.status === 401) {
         return NextResponse.json(
           { 

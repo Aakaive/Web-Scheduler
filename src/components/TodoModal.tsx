@@ -36,7 +36,6 @@ export default function TodoModal({ isOpen, onClose, workspaceId, userId, onTodo
         expression: expression.trim() || null,
       })
 
-      // 성공 시 초기화 및 닫기
       setSummary('')
       setExpression('')
       onTodoAdded()
