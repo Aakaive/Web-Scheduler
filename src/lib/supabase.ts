@@ -169,7 +169,6 @@ export const updateSod = async (sodId: string, userId: string, updates: Partial<
     throw error
   }
 
-  // If check status was updated, also update linked Todo
   if (updates.check !== undefined) {
     const { error: todoError } = await supabase
       .from('todos')
@@ -331,7 +330,6 @@ export const createSodFromTodo = async (
   startAt: string,
   endAt: string | null
 ) => {
-  // First, get the todo
   const { data: todo, error: todoError } = await supabase
     .from('todos')
     .select('*')
@@ -344,7 +342,6 @@ export const createSodFromTodo = async (
     throw todoError || new Error('Todo not found')
   }
 
-  // Create SOD from todo
   const sod = await createSod({
     workspace_id: workspaceId,
     user_id: userId,
@@ -356,7 +353,6 @@ export const createSodFromTodo = async (
     routine_id: null
   })
 
-  // Update todo to link to the SOD
   await updateTodo(todoId, userId, { 
     sod_id: sod.id,
     completed: sod.check 
