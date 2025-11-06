@@ -255,11 +255,13 @@ export default function TodoPage() {
                 todos={todos} 
                 loading={loading}
                 userId={userId}
+                workspaceId={workspaceId}
                 onDelete={handleTodoDeleted}
                 onToggle={handleTodoToggle}
                 onEdit={handleTodoEdit}
                 onPin={handleTodoPin}
                 onUp={handleTodoUp}
+                onRefresh={fetchTodos}
               />
             )}
               </div>

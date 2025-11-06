@@ -169,6 +169,19 @@ export const updateSod = async (sodId: string, userId: string, updates: Partial<
     throw error
   }
 
+  // If check status was updated, also update linked Todo
+  if (updates.check !== undefined) {
+    const { error: todoError } = await supabase
+      .from('todos')
+      .update({ completed: updates.check })
+      .eq('sod_id', sodId)
+      .eq('user_id', userId)
+    
+    if (todoError) {
+      console.error('Error updating linked todo:', todoError)
+    }
+  }
+
   return data as Sod
 }
 
@@ -220,6 +233,7 @@ export interface Todo {
   summary: string
   expression: string | null
   completed: boolean
+  sod_id: string | null
 }
 
 export const getTodosByWorkspace = async (workspaceId: string) => {
@@ -240,7 +254,7 @@ export const getTodosByWorkspace = async (workspaceId: string) => {
   return data as Todo[]
 }
 
-export const createTodo = async (todo: Omit<Todo, 'id' | 'created_at' | 'completed' | 'is_pinned' | 'pinned_at' | 'upped_at'>) => {
+export const createTodo = async (todo: Omit<Todo, 'id' | 'created_at' | 'completed' | 'is_pinned' | 'pinned_at' | 'upped_at' | 'sod_id'>) => {
   const { data, error } = await supabase
     .from('todos')
     .insert({ 
@@ -248,7 +262,8 @@ export const createTodo = async (todo: Omit<Todo, 'id' | 'created_at' | 'complet
       completed: false,
       is_pinned: false,
       pinned_at: null,
-      upped_at: null
+      upped_at: null,
+      sod_id: null
     })
     .select()
     .single()
@@ -306,6 +321,48 @@ export const upTodo = async (todoId: string, userId: string) => {
   }
   
   return updateTodo(todoId, userId, updates)
+}
+
+export const createSodFromTodo = async (
+  todoId: string,
+  userId: string,
+  workspaceId: string,
+  date: string,
+  startAt: string,
+  endAt: string | null
+) => {
+  // First, get the todo
+  const { data: todo, error: todoError } = await supabase
+    .from('todos')
+    .select('*')
+    .eq('id', todoId)
+    .eq('user_id', userId)
+    .single()
+
+  if (todoError || !todo) {
+    console.error('Error fetching todo:', todoError)
+    throw todoError || new Error('Todo not found')
+  }
+
+  // Create SOD from todo
+  const sod = await createSod({
+    workspace_id: workspaceId,
+    user_id: userId,
+    date,
+    start_at: startAt,
+    end_at: endAt,
+    summary: todo.summary,
+    expression: todo.expression,
+    routine_id: null
+  })
+
+  // Update todo to link to the SOD
+  await updateTodo(todoId, userId, { 
+    sod_id: sod.id,
+    completed: sod.check 
+  })
+
+  return sod
 }
 
 export const getRefreshedGoogleToken = async (): Promise<string | null> => {

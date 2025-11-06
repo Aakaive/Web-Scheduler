@@ -2,24 +2,29 @@
 
 import { Todo } from '@/lib/supabase'
 import { useState } from 'react'
+import TodoToSodModal from './TodoToSodModal'
 
 interface TodoListProps {
   todos: Todo[]
   loading: boolean
   userId: string
+  workspaceId: string
   onDelete: (todoId: string) => void
   onToggle: (todoId: string, completed: boolean) => void
   onEdit: (todoId: string, summary: string, expression: string | null) => void
   onPin: (todoId: string, isPinned: boolean) => void
   onUp: (todoId: string) => void
+  onRefresh: () => void
 }
 
-export default function TodoList({ todos, loading, userId, onDelete, onToggle, onEdit, onPin, onUp }: TodoListProps) {
+export default function TodoList({ todos, loading, userId, workspaceId, onDelete, onToggle, onEdit, onPin, onUp, onRefresh }: TodoListProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editSummary, setEditSummary] = useState('')
   const [editExpression, setEditExpression] = useState('')
   const [showInProgress, setShowInProgress] = useState(true)
   const [showCompleted, setShowCompleted] = useState(true)
+  const [sodModalOpen, setSodModalOpen] = useState(false)
+  const [selectedTodoForSod, setSelectedTodoForSod] = useState<Todo | null>(null)
 
   const inProgressTodos = todos.filter(todo => !todo.completed)
   const completedTodos = todos.filter(todo => todo.completed)
@@ -52,6 +57,20 @@ export default function TodoList({ todos, loading, userId, onDelete, onToggle, o
     setEditingId(null)
     setEditSummary('')
     setEditExpression('')
+  }
+
+  const handleOpenSodModal = (todo: Todo) => {
+    setSelectedTodoForSod(todo)
+    setSodModalOpen(true)
+  }
+
+  const handleCloseSodModal = () => {
+    setSodModalOpen(false)
+    setSelectedTodoForSod(null)
+  }
+
+  const handleSodSuccess = () => {
+    onRefresh()
   }
 
   const renderTodoItem = (todo: Todo) => (
@@ -105,6 +124,18 @@ export default function TodoList({ todos, loading, userId, onDelete, onToggle, o
             <div className="flex gap-1 ml-auto">
             {!todo.completed && (
               <>
+                {!todo.sod_id && (
+                  <button
+                    onClick={() => handleOpenSodModal(todo)}
+                    className="p-2 text-zinc-400 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                    aria-label="SOD 추가"
+                    title="일정으로 추가"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </button>
+                )}
                 <button
                   onClick={() => onPin(todo.id, !todo.is_pinned)}
                   className={`p-2 transition-colors ${
@@ -276,6 +307,16 @@ export default function TodoList({ todos, loading, userId, onDelete, onToggle, o
           </div>
         )}
       </div>
+
+      <TodoToSodModal
+        isOpen={sodModalOpen}
+        onClose={handleCloseSodModal}
+        todoId={selectedTodoForSod?.id || ''}
+        todoSummary={selectedTodoForSod?.summary || ''}
+        workspaceId={workspaceId}
+        userId={userId}
+        onSuccess={handleSodSuccess}
+      />
     </div>
   )
 }
