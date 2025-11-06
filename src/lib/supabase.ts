@@ -491,3 +491,59 @@ export const removeRoutineFromMonth = async (
     throw error
   }
 }
+
+export interface Comment {
+  id: string
+  workspace_id: string
+  created_at: string
+  expression: string
+  date: string
+}
+
+export const getCommentByDate = async (workspaceId: string, date: string) => {
+  const { data, error } = await supabase
+    .from('comments')
+    .select('*')
+    .eq('workspace_id', workspaceId)
+    .eq('date', date)
+    .maybeSingle()
+
+  if (error) {
+    console.error('Error fetching comment:', error)
+    throw error
+  }
+
+  return data as Comment | null
+}
+
+export const createComment = async (comment: Omit<Comment, 'id' | 'created_at'>) => {
+  const { data, error } = await supabase
+    .from('comments')
+    .insert(comment)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error creating comment:', error)
+    throw error
+  }
+
+  return data as Comment
+}
+
+export const updateComment = async (commentId: string, workspaceId: string, expression: string) => {
+  const { data, error } = await supabase
+    .from('comments')
+    .update({ expression })
+    .eq('id', commentId)
+    .eq('workspace_id', workspaceId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error updating comment:', error)
+    throw error
+  }
+
+  return data as Comment
+}

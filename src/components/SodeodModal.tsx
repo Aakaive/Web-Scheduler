@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase, getSodsByDate, createSod, updateSod, deleteSod, Sod } from '@/lib/supabase'
+import { supabase, getSodsByDate, createSod, updateSod, deleteSod, Sod, getCommentByDate, createComment, updateComment, Comment } from '@/lib/supabase'
 
 interface SodeodModalProps {
   isOpen: boolean
@@ -106,6 +106,10 @@ export default function SodeodModal({
   const [editSummary, setEditSummary] = useState<string>('')
   const [editExpression, setEditExpression] = useState<string>('')
   const [copying, setCopying] = useState(false)
+  const [comment, setComment] = useState<Comment | null>(null)
+  const [showCommentForm, setShowCommentForm] = useState(false)
+  const [commentExpression, setCommentExpression] = useState<string>('')
+  const [savingComment, setSavingComment] = useState(false)
 
   const dateStr = (() => {
     const year = date.getFullYear()
@@ -117,7 +121,9 @@ export default function SodeodModal({
   useEffect(() => {
     if (isOpen) {
       fetchSods()
+      fetchComment()
       setShowForm(false)
+      setShowCommentForm(false)
     }
   }, [isOpen, dateStr, workspaceId, userId])
 
@@ -131,6 +137,17 @@ export default function SodeodModal({
       setError(e instanceof Error ? e.message : '데이터를 불러오는데 실패했습니다.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchComment = async () => {
+    try {
+      setError(null)
+      const data = await getCommentByDate(workspaceId, dateStr)
+      setComment(data)
+      setCommentExpression(data?.expression || '')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '회고를 불러오는데 실패했습니다.')
     }
   }
 
@@ -269,6 +286,40 @@ export default function SodeodModal({
     }
   }
 
+  const handleCommentClick = () => {
+    setShowCommentForm(true)
+    setCommentExpression(comment?.expression || '')
+  }
+
+  const handleCommentCancel = () => {
+    setShowCommentForm(false)
+    setCommentExpression(comment?.expression || '')
+  }
+
+  const handleCommentSave = async () => {
+    try {
+      setSavingComment(true)
+      setError(null)
+
+      if (comment) {
+        await updateComment(comment.id, workspaceId, commentExpression)
+      } else {
+        await createComment({
+          workspace_id: workspaceId,
+          date: dateStr,
+          expression: commentExpression,
+        })
+      }
+
+      setShowCommentForm(false)
+      await fetchComment()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '회고 저장에 실패했습니다.')
+    } finally {
+      setSavingComment(false)
+    }
+  }
+
   const buildCopyText = () => {
     const lines: string[] = []
     lines.push('[SoD/EoD]')
@@ -279,6 +330,11 @@ export default function SodeodModal({
       const timeRange = `${start}~${end}`
       const summaryText = sod.summary ? ` ${sod.summary}` : ''
       lines.push(`- ${status} ${timeRange}${summaryText}`)
+    }
+    if (comment && comment.expression) {
+      lines.push('')
+      lines.push('[회고]')
+      lines.push(comment.expression)
     }
     return lines.join('\n')
   }
@@ -591,6 +647,69 @@ export default function SodeodModal({
               ))}
             </div>
           )}
+
+          <div className="mt-8 pt-6 border-t border-zinc-200 dark:border-zinc-800">
+            <div className="flex justify-center mb-4">
+              <button
+                onClick={handleCommentClick}
+                disabled={showCommentForm}
+                className="px-6 py-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                aria-label="회고 작성"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                <span>{comment ? '회고 수정' : '회고 작성'}</span>
+              </button>
+            </div>
+
+            {showCommentForm && (
+              <div className="p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-amber-50 dark:bg-amber-900/10 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-2">
+                    회고 내용
+                  </label>
+                  <textarea
+                    value={commentExpression}
+                    onChange={(e) => setCommentExpression(e.target.value)}
+                    rows={6}
+                    className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-400 resize-none"
+                    placeholder="하루를 돌아보며 느낀 점을 작성해보세요..."
+                  />
+                </div>
+
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={handleCommentCancel}
+                    disabled={savingComment}
+                    className="px-4 py-2 text-sm border border-zinc-300 dark:border-zinc-700 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={handleCommentSave}
+                    disabled={savingComment || !commentExpression.trim()}
+                    className="px-4 py-2 text-sm font-semibold bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {savingComment ? '저장 중...' : '저장'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {!showCommentForm && comment && comment.expression && (
+              <div className="p-4 border border-amber-200 dark:border-amber-800 rounded-lg bg-amber-50 dark:bg-amber-900/10">
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+                    회고
+                  </h3>
+                </div>
+                <div className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">
+                  {comment.expression}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
