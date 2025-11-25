@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { createSodFromTodo } from '@/lib/supabase'
+import { createSodFromTodo, SodCategory } from '@/lib/supabase'
 
 interface TodoToSodModalProps {
   isOpen: boolean
@@ -39,6 +39,13 @@ export default function TodoToSodModal({
   const [includeEndTime, setIncludeEndTime] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const CATEGORY_OPTIONS: { value: SodCategory; label: string }[] = [
+    { value: 'life', label: '생활' },
+    { value: 'work', label: '업무' },
+    { value: 'learning', label: '학습' },
+    { value: 'etc', label: '기타' },
+  ]
+  const [category, setCategory] = useState<SodCategory>('etc')
 
   const to24Hour = (hour: number, minute: number, ampm: 'AM' | 'PM'): string => {
     let h24 = hour
@@ -64,9 +71,11 @@ export default function TodoToSodModal({
         workspaceId,
         date,
         startAt,
-        endAt
+        endAt,
+        category
       )
 
+      setCategory('etc')
       onSuccess()
       onClose()
     } catch (err) {
@@ -79,6 +88,7 @@ export default function TodoToSodModal({
   const handleClose = () => {
     if (!isSubmitting) {
       setError(null)
+      setCategory('etc')
       onClose()
     }
   }
@@ -202,6 +212,24 @@ export default function TodoToSodModal({
                   </select>
                 </div>
               )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                활동 속성 *
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value as SodCategory)}
+                disabled={isSubmitting}
+                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+              >
+                {CATEGORY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {error && (

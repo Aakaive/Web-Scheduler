@@ -634,10 +634,18 @@ export default function WorkspacePage() {
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-start gap-2 mb-1">
+                              <div className="flex items-center gap-2 mb-1">
                                 <div className="text-sm text-blue-600 dark:text-blue-400 font-medium shrink-0">
                                   {startTime} - {endTime}
                                 </div>
+                                <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 shrink-0">
+                                  {{
+                                    life: '생활',
+                                    work: '업무',
+                                    learning: '학습',
+                                    etc: '기타',
+                                  }[sod.category ?? 'etc']}
+                                </span>
                                 {sod.summary && (
                                   <h3 className={`text-base font-medium flex-1 ${
                                     sod.check

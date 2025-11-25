@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase, getSodsByDate, createSod, updateSod, deleteSod, Sod, getCommentByDate, createComment, updateComment, Comment } from '@/lib/supabase'
+import { getSodsByDate, createSod, updateSod, deleteSod, Sod, SodCategory, getCommentByDate, createComment, updateComment, Comment } from '@/lib/supabase'
 
 interface SodeodModalProps {
   isOpen: boolean
@@ -18,6 +18,19 @@ export default function SodeodModal({
   workspaceId,
   userId,
 }: SodeodModalProps) {
+  const CATEGORY_OPTIONS: { value: SodCategory; label: string }[] = [
+    { value: 'life', label: '생활' },
+    { value: 'work', label: '업무' },
+    { value: 'learning', label: '학습' },
+    { value: 'etc', label: '기타' },
+  ]
+  const DEFAULT_CATEGORY: SodCategory = 'etc'
+  const CATEGORY_LABELS = CATEGORY_OPTIONS.reduce<Record<SodCategory, string>>((acc, option) => {
+    acc[option.value] = option.label
+    return acc
+  }, {} as Record<SodCategory, string>)
+  const getCategoryLabel = (value?: SodCategory | null) => CATEGORY_LABELS[value ?? DEFAULT_CATEGORY]
+
   const to12Hour = (hhmm: string | null) => {
     if (!hhmm) return { hour: 12, minute: 0, ampm: 'AM' as const }
     const [hh, mm] = hhmm.split(':').map(Number)
@@ -95,6 +108,7 @@ export default function SodeodModal({
   const [endAmPm, setEndAmPm] = useState<'AM' | 'PM'>('PM')
   const [summary, setSummary] = useState<string>('')
   const [expression, setExpression] = useState<string>('')
+  const [category, setCategory] = useState<SodCategory>(DEFAULT_CATEGORY)
   const [saving, setSaving] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editStartHour, setEditStartHour] = useState<number>(9)
@@ -105,6 +119,7 @@ export default function SodeodModal({
   const [editEndAmPm, setEditEndAmPm] = useState<'AM' | 'PM'>('PM')
   const [editSummary, setEditSummary] = useState<string>('')
   const [editExpression, setEditExpression] = useState<string>('')
+  const [editCategory, setEditCategory] = useState<SodCategory>(DEFAULT_CATEGORY)
   const [copying, setCopying] = useState(false)
   const [comment, setComment] = useState<Comment | null>(null)
   const [showCommentForm, setShowCommentForm] = useState(false)
@@ -161,6 +176,7 @@ export default function SodeodModal({
     setEndAmPm('PM')
     setSummary('')
     setExpression('')
+    setCategory(DEFAULT_CATEGORY)
   }
 
   const handleFormCancel = () => {
@@ -173,6 +189,7 @@ export default function SodeodModal({
     setEndAmPm('PM')
     setSummary('')
     setExpression('')
+    setCategory(DEFAULT_CATEGORY)
   }
 
   const handleFormSave = async () => {
@@ -192,6 +209,7 @@ export default function SodeodModal({
         summary: summary || null,
         expression: expression || null,
         routine_id: null,
+        category,
       })
 
       setShowForm(false)
@@ -251,6 +269,7 @@ export default function SodeodModal({
     setEditEndAmPm(end12.ampm)
     setEditSummary(sod.summary ?? '')
     setEditExpression(sod.expression ?? '')
+    setEditCategory(sod.category ?? DEFAULT_CATEGORY)
   }
 
   const cancelEdit = () => {
@@ -263,6 +282,7 @@ export default function SodeodModal({
     setEditEndAmPm('PM')
     setEditSummary('')
     setEditExpression('')
+    setEditCategory(DEFAULT_CATEGORY)
   }
 
   const saveEdit = async (sodId: string) => {
@@ -276,6 +296,7 @@ export default function SodeodModal({
         end_at: endAt24,
         summary: editSummary || null,
         expression: editExpression || null,
+        category: editCategory,
       })
       cancelEdit()
       await fetchSods()
@@ -484,6 +505,23 @@ export default function SodeodModal({
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-2">
+                  활동 속성
+                </label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value as SodCategory)}
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                >
+                  {CATEGORY_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="flex gap-2 justify-end">
                 <button
                   onClick={handleFormCancel}
@@ -580,6 +618,20 @@ export default function SodeodModal({
                               placeholder="활동에 관한 상세 내용"
                             />
                           </div>
+                          <div>
+                            <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">활동 속성</label>
+                            <select
+                              value={editCategory}
+                              onChange={(e) => setEditCategory(e.target.value as SodCategory)}
+                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                            >
+                              {CATEGORY_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                           <div className="flex gap-2 justify-end">
                             <button
                               onClick={cancelEdit}
@@ -603,6 +655,9 @@ export default function SodeodModal({
                             <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                               {formatTime(sod.start_at)} ~ {formatTime(sod.end_at)}
                             </div>
+                            <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700">
+                              {getCategoryLabel(sod.category)}
+                            </span>
                           </div>
                           {sod.summary && (
                             <div className={`text-sm font-semibold mb-1 ${

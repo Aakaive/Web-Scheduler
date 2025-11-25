@@ -95,6 +95,8 @@ export const deleteReminder = async (reminderId: string, userId: string) => {
   }
 }
 
+export type SodCategory = 'life' | 'work' | 'learning' | 'etc'
+
 export interface Sod {
   id: string
   workspace_id: string
@@ -107,6 +109,7 @@ export interface Sod {
   expression: string | null
   check: boolean
   routine_id: string | null
+  category: SodCategory
 }
 
 export interface Routine {
@@ -143,7 +146,7 @@ export const getSodsByDate = async (workspaceId: string, userId: string, date: s
 export const createSod = async (sod: Omit<Sod, 'id' | 'created_at' | 'check'>) => {
   const { data, error } = await supabase
     .from('sods')
-    .insert({ ...sod, check: false })
+    .insert({ ...sod, category: sod.category ?? 'etc', check: false })
     .select()
     .single()
 
@@ -328,7 +331,8 @@ export const createSodFromTodo = async (
   workspaceId: string,
   date: string,
   startAt: string,
-  endAt: string | null
+  endAt: string | null,
+  category: SodCategory = 'etc'
 ) => {
   const { data: todo, error: todoError } = await supabase
     .from('todos')
@@ -350,7 +354,8 @@ export const createSodFromTodo = async (
     end_at: endAt,
     summary: todo.summary,
     expression: todo.expression,
-    routine_id: null
+    routine_id: null,
+    category
   })
 
   await updateTodo(todoId, userId, { 
@@ -494,7 +499,8 @@ export const applyRoutineToMonth = async (
         summary: summaryText,
         expression: routine.expression,
         routine_id: routine.id,
-        check: false
+        check: false,
+        category: 'etc'
       })
     }
   }
