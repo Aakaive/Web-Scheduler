@@ -193,6 +193,27 @@ export default function TodoList({ todos, loading, userId, workspaceId, onDelete
 
           <div className="space-y-2">
             <div className="flex items-start gap-2">
+              {todo.sod_id && (
+                <span title="SOD와 동기화됨">
+                  <svg 
+                    className="w-6 h-6 text-gray-800 dark:text-white shrink-0 mt-0.5" 
+                    aria-hidden="true" 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="24" 
+                    height="24" 
+                    fill="none" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      stroke="currentColor" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth="2" 
+                      d="M4 16h13M4 16l4-4m-4 4 4 4M20 8H7m13 0-4 4m4-4-4-4"
+                    />
+                  </svg>
+                </span>
+              )}
               <h3
                 className={`text-base font-medium flex-1 ${
                   todo.completed

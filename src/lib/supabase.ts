@@ -383,6 +383,22 @@ export const upTodo = async (todoId: string, userId: string) => {
   return updateTodo(todoId, userId, updates)
 }
 
+export const getTodoBySodId = async (sodId: string, userId: string): Promise<Todo | null> => {
+  const { data, error } = await supabase
+    .from('todos')
+    .select('*')
+    .eq('sod_id', sodId)
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (error) {
+    console.error('Error fetching todo by sod_id:', error)
+    throw error
+  }
+
+  return data as Todo | null
+}
+
 export const createSodFromTodo = async (
   todoId: string,
   userId: string,

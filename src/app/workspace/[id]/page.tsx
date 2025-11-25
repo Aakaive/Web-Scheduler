@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { supabase, getTodosByWorkspace, Todo, getRemindersByWorkspace, Reminder, getSodsByDate, Sod, updateSod, updateTodo } from '@/lib/supabase'
+import { supabase, getTodosByWorkspace, Todo, getRemindersByWorkspace, Reminder, getSodsByDate, Sod, updateSod, updateTodo, getTodoBySodId } from '@/lib/supabase'
 import Link from 'next/link'
 import { useWorkspaceCategories } from '@/hooks/useWorkspaceCategories'
 
@@ -35,6 +35,7 @@ export default function WorkspacePage() {
   const [selectedDate, setSelectedDate] = useState<string>(getSeoulTodayString())
   const [sods, setSods] = useState<Sod[]>([])
   const [loadingSods, setLoadingSods] = useState(true)
+  const [linkedTodoMap, setLinkedTodoMap] = useState<Map<string, boolean>>(new Map())
 
   const { categories } = useWorkspaceCategories(workspaceId, { enabled: !!workspaceId })
   const categoryMap = useMemo(() => {
@@ -155,6 +156,19 @@ export default function WorkspacePage() {
       setLoadingSods(true)
       const data = await getSodsByDate(workspaceId, userId, selectedDate)
       setSods(data)
+      
+      // 각 sod에 대해 연결된 todo가 있는지 확인
+      const todoMap = new Map<string, boolean>()
+      for (const sod of data) {
+        try {
+          const todo = await getTodoBySodId(sod.id, userId)
+          todoMap.set(sod.id, !!todo)
+        } catch (e) {
+          console.error('Error checking linked todo:', e)
+          todoMap.set(sod.id, false)
+        }
+      }
+      setLinkedTodoMap(todoMap)
     } catch (e) {
       console.error('Failed to fetch SODs:', e)
     } finally {
@@ -454,6 +468,27 @@ export default function WorkspacePage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start gap-2 mb-2">
+                                {todo.sod_id && (
+                                  <span title="SOD와 동기화됨" className="shrink-0 mt-0.5">
+                                    <svg 
+                                      className="w-6 h-6 text-gray-800 dark:text-white" 
+                                      aria-hidden="true" 
+                                      xmlns="http://www.w3.org/2000/svg" 
+                                      width="24" 
+                                      height="24" 
+                                      fill="none" 
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path 
+                                        stroke="currentColor" 
+                                        strokeLinecap="round" 
+                                        strokeLinejoin="round" 
+                                        strokeWidth="2" 
+                                        d="M4 16h13M4 16l4-4m-4 4 4 4M20 8H7m13 0-4 4m4-4-4-4"
+                                      />
+                                    </svg>
+                                  </span>
+                                )}
                                 <h3 className="text-base font-medium text-zinc-900 dark:text-zinc-100 flex-1 line-clamp-2">
                                   {todo.summary}
                                 </h3>
@@ -684,19 +719,42 @@ export default function WorkspacePage() {
                                   {getCategoryLabel(sod.category_id)}
                                 </span>
                                 {sod.summary && (
-                                  <h3 className={`text-base font-medium flex-1 ${
+                                  <h3 className={`text-base font-medium flex-1 flex items-start gap-2 ${
                                     sod.check
                                       ? 'line-through text-zinc-500 dark:text-zinc-600'
                                       : 'text-zinc-900 dark:text-zinc-100'
                                   }`}>
-                                    {sod.summary.startsWith('(루틴)') ? (
-                                      <>
-                                        <span className="text-purple-600 dark:text-purple-400">(루틴)</span>
-                                        {sod.summary.substring(4)}
-                                      </>
-                                    ) : (
-                                      sod.summary
+                                    {linkedTodoMap.get(sod.id) && (
+                                      <span title="Todo와 동기화됨" className="shrink-0 mt-0.5">
+                                        <svg 
+                                          className="w-6 h-6 text-gray-800 dark:text-white" 
+                                          aria-hidden="true" 
+                                          xmlns="http://www.w3.org/2000/svg" 
+                                          width="24" 
+                                          height="24" 
+                                          fill="none" 
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path 
+                                            stroke="currentColor" 
+                                            strokeLinecap="round" 
+                                            strokeLinejoin="round" 
+                                            strokeWidth="2" 
+                                            d="M4 16h13M4 16l4-4m-4 4 4 4M20 8H7m13 0-4 4m4-4-4-4"
+                                          />
+                                        </svg>
+                                      </span>
                                     )}
+                                    <span>
+                                      {sod.summary.startsWith('(루틴)') ? (
+                                        <>
+                                          <span className="text-purple-600 dark:text-purple-400">(루틴)</span>
+                                          {sod.summary.substring(4)}
+                                        </>
+                                      ) : (
+                                        sod.summary
+                                      )}
+                                    </span>
                                   </h3>
                                 )}
                               </div>

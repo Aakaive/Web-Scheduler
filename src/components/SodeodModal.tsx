@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { getSodsByDate, createSod, updateSod, deleteSod, Sod, getCommentByDate, createComment, updateComment, Comment } from '@/lib/supabase'
+import { getSodsByDate, createSod, updateSod, deleteSod, Sod, getCommentByDate, createComment, updateComment, Comment, getTodoBySodId } from '@/lib/supabase'
 import { useWorkspaceCategories } from '@/hooks/useWorkspaceCategories'
 
 interface SodeodModalProps {
@@ -108,6 +108,7 @@ export default function SodeodModal({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [linkedTodoMap, setLinkedTodoMap] = useState<Map<string, boolean>>(new Map())
   
   const [startHour, setStartHour] = useState<number>(9)
   const [startMinute, setStartMinute] = useState<number>(0)
@@ -167,6 +168,19 @@ export default function SodeodModal({
       setError(null)
       const data = await getSodsByDate(workspaceId, userId, dateStr)
       setSods(data)
+      
+      // 각 sod에 대해 연결된 todo가 있는지 확인
+      const todoMap = new Map<string, boolean>()
+      for (const sod of data) {
+        try {
+          const todo = await getTodoBySodId(sod.id, userId)
+          todoMap.set(sod.id, !!todo)
+        } catch (e) {
+          console.error('Error checking linked todo:', e)
+          todoMap.set(sod.id, false)
+        }
+      }
+      setLinkedTodoMap(todoMap)
     } catch (e) {
       setError(e instanceof Error ? e.message : '데이터를 불러오는데 실패했습니다.')
     } finally {
@@ -720,12 +734,33 @@ export default function SodeodModal({
                             </span>
                           </div>
                           {sod.summary && (
-                            <div className={`text-sm font-semibold mb-1 ${
+                            <div className={`text-sm font-semibold mb-1 flex items-start gap-2 ${
                               sod.summary.startsWith('(루틴)')
                                 ? 'text-purple-600 dark:text-purple-400'
                                 : 'text-zinc-900 dark:text-zinc-100'
                             }`}>
-                              {sod.summary}
+                              {linkedTodoMap.get(sod.id) && (
+                                <span title="Todo와 동기화됨">
+                                  <svg 
+                                    className="w-6 h-6 text-gray-800 dark:text-white shrink-0 mt-0.5" 
+                                    aria-hidden="true" 
+                                    xmlns="http://www.w3.org/2000/svg" 
+                                    width="24" 
+                                    height="24" 
+                                    fill="none" 
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path 
+                                      stroke="currentColor" 
+                                      strokeLinecap="round" 
+                                      strokeLinejoin="round" 
+                                      strokeWidth="2" 
+                                      d="M4 16h13M4 16l4-4m-4 4 4 4M20 8H7m13 0-4 4m4-4-4-4"
+                                    />
+                                  </svg>
+                                </span>
+                              )}
+                              <span>{sod.summary}</span>
                             </div>
                           )}
                           {sod.expression && (
