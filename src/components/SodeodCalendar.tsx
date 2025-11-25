@@ -226,7 +226,9 @@ export default function SodeodCalendar({ onDateSelect, workspaceId, userId, onMo
 
           const dayKey = toYmd(date)
           const stat = statsByDate[dayKey] || { total: 0, checked: 0 }
-          const percent = stat.total === 0 ? 0 : Math.round((stat.checked / stat.total) * 1000) / 10
+          const completionRatio = stat.total === 0 ? 0 : stat.checked / stat.total
+          const percent = Math.round(completionRatio * 1000) / 10
+          const isPerfectCompletion = stat.total > 0 && stat.checked === stat.total
 
           const today = new Date()
           today.setHours(0, 0, 0, 0)
@@ -238,6 +240,8 @@ export default function SodeodCalendar({ onDateSelect, workspaceId, userId, onMo
             ? ''
             : stat.total === 0 || !isPastOrToday
             ? ''
+            : isPerfectCompletion
+            ? 'bg-blue-100/60 dark:bg-blue-900/30'
             : percent < 34
             ? 'bg-red-100/60 dark:bg-red-900/30'
             : percent < 67
@@ -246,6 +250,8 @@ export default function SodeodCalendar({ onDateSelect, workspaceId, userId, onMo
 
           const textColorClass = !isCurrentMonthDate || stat.total === 0 || !isPastOrToday
             ? 'text-zinc-500 dark:text-zinc-400'
+            : isPerfectCompletion
+            ? 'text-blue-600 dark:text-blue-300'
             : percent < 34
             ? 'text-red-600 dark:text-red-400'
             : percent < 67
