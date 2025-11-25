@@ -434,7 +434,11 @@ export default function WorkspacePage() {
                   </div>
                 ) : inProgressTodos.length === 0 ? (
                   <div className="text-center py-12">
-                    <div className="text-4xl mb-3">✅</div>
+                    <div className="mb-3 inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-purple-100 dark:bg-purple-900/30">
+                      <svg className="w-8 h-8 text-purple-600 dark:text-purple-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24">
+                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m8.032 12 1.984 1.984 4.96-4.96m4.55 5.272.893-.893a1.984 1.984 0 0 0 0-2.806l-.893-.893a1.984 1.984 0 0 1-.581-1.403V7.04a1.984 1.984 0 0 0-1.984-1.984h-1.262a1.983 1.983 0 0 1-1.403-.581l-.893-.893a1.984 1.984 0 0 0-2.806 0l-.893.893a1.984 1.984 0 0 1-1.403.581H7.04A1.984 1.984 0 0 0 5.055 7.04v1.262c0 .527-.209 1.031-.581 1.403l-.893.893a1.984 1.984 0 0 0 0 2.806l.893.893c.372.372.581.876.581 1.403v1.262a1.984 1.984 0 0 0 1.984 1.984h1.262c.527 0 1.031.209 1.403.581l.893.893a1.984 1.984 0 0 0 2.806 0l.893-.893a1.985 1.985 0 0 1 1.403-.581h1.262a1.984 1.984 0 0 0 1.984-1.984V15.7c0-.527.209-1.031.581-1.403Z"/>
+                      </svg>
+                    </div>
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">
                       진행중인 할 일이 없습니다.
                     </p>
@@ -544,7 +548,11 @@ export default function WorkspacePage() {
                   </div>
                 ) : todayReminders.length === 0 ? (
                   <div className="text-center py-12">
-                    <div className="text-4xl mb-3">📅</div>
+                    <div className="mb-3 inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-green-100 dark:bg-green-900/30">
+                      <svg className="w-8 h-8 text-green-600 dark:text-green-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24">
+                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5.464V3.099m0 2.365a5.338 5.338 0 0 1 5.133 5.368v1.8c0 2.386 1.867 2.982 1.867 4.175C19 17.4 19 18 18.462 18H5.538C5 18 5 17.4 5 16.807c0-1.193 1.867-1.789 1.867-4.175v-1.8A5.338 5.338 0 0 1 12 5.464ZM6 5 5 4M4 9H3m15-4 1-1m1 5h1M8.54 18a3.48 3.48 0 0 0 6.92 0H8.54Z"/>
+                      </svg>
+                    </div>
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">
                       오늘 예정된 일정이 없습니다.
                     </p>
@@ -667,7 +675,11 @@ export default function WorkspacePage() {
                   </div>
                 ) : sods.length === 0 ? (
                   <div className="text-center py-12">
-                    <div className="text-4xl mb-3">📋</div>
+                    <div className="mb-3 inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-100 dark:bg-blue-900/30">
+                      <svg className="w-8 h-8 text-blue-600 dark:text-blue-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24">
+                        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m11.5 11.5 2.071 1.994M4 10h5m11 0h-1.5M12 7V4M7 7V4m10 3V4m-7 13H8v-2l5.227-5.292a1.46 1.46 0 0 1 2.065 2.065L10 17Zm-5 3h14a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Z"/>
+                      </svg>
+                    </div>
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">
                       이 날짜에 등록된 SoD가 없습니다.
                     </p>
