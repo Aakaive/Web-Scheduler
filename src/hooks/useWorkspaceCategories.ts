@@ -30,7 +30,7 @@ export const useWorkspaceCategories = (
       setCategories(data)
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : '속성을 불러오지 못했습니다.'
+        e instanceof Error ? e.message : '태그를 불러오지 못했습니다.'
       )
       setCategories([])
     } finally {

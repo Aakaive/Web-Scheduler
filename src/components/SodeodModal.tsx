@@ -35,9 +35,9 @@ export default function SodeodModal({
   const firstCategoryId = categories[0]?.id ?? null
   const getCategoryLabel = (value?: number | null) => {
     if (value === null || value === undefined) {
-      return '속성 없음'
+      return '태그 없음'
     }
-    return categoryMap.get(value) ?? '삭제된 속성'
+    return categoryMap.get(value) ?? '삭제된 태그'
   }
 
   const to12Hour = (hhmm: string | null) => {
@@ -213,7 +213,7 @@ export default function SodeodModal({
 
   const handleFormSave = async () => {
     if (!categoryId) {
-      setError('활동 속성을 먼저 추가하고 선택해주세요.')
+      setError('활동 태그를 먼저 추가하고 선택해주세요.')
       return
     }
 
@@ -312,7 +312,7 @@ export default function SodeodModal({
 
   const saveEdit = async (sodId: string) => {
     if (!editCategoryId) {
-      setError('활동 속성을 선택해주세요.')
+      setError('활동 태그를 선택해주세요.')
       return
     }
 
@@ -467,7 +467,7 @@ export default function SodeodModal({
 
         {!categoriesLoading && categories.length === 0 && (
           <div className="mb-4 p-3 border border-amber-200 dark:border-amber-800 rounded-md bg-amber-50 dark:bg-amber-900/20 text-sm text-amber-900 dark:text-amber-100">
-            아직 등록된 속성이 없습니다. 속성 관리에서 속성을 추가한 뒤 SoD를 작성할 수 있어요.
+            아직 등록된 태그가 없습니다. 태그 관리에서 태그를 추가한 뒤 SoD를 작성할 수 있어요.
           </div>
         )}
 
@@ -543,7 +543,7 @@ export default function SodeodModal({
 
               <div>
                 <label className="block text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-2">
-                  활동 속성
+                  활동 태그
                 </label>
                 <select
                   value={categoryId ?? ''}
@@ -555,7 +555,7 @@ export default function SodeodModal({
                   className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:bg-zinc-50 dark:disabled:bg-zinc-900/50"
                 >
                   {categories.length === 0 ? (
-                    <option value="">등록된 속성이 없습니다</option>
+                    <option value="">등록된 태그가 없습니다</option>
                   ) : (
                     categories.map((option) => (
                       <option key={option.id} value={option.id}>
@@ -663,7 +663,7 @@ export default function SodeodModal({
                             />
                           </div>
                           <div>
-                            <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">활동 속성</label>
+                            <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">활동 태그</label>
                             <select
                               value={editCategoryId ?? ''}
                               onChange={(e) => {
@@ -674,7 +674,7 @@ export default function SodeodModal({
                               className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:bg-zinc-50 dark:disabled:bg-zinc-900/50"
                             >
                               {categories.length === 0 ? (
-                                <option value="">등록된 속성이 없습니다</option>
+                                <option value="">등록된 태그가 없습니다</option>
                               ) : (
                                 <>
                                   {categories.map((option) => (
@@ -685,7 +685,7 @@ export default function SodeodModal({
                                   {editCategoryId &&
                                     !categoryMap.has(editCategoryId) && (
                                       <option value={editCategoryId} disabled>
-                                        삭제된 속성 (ID: {editCategoryId})
+                                        삭제된 태그 (ID: {editCategoryId})
                                       </option>
                                     )}
                                 </>

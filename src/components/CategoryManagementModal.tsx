@@ -49,7 +49,7 @@ export default function CategoryManagementModal({
 
   const handleCreate = async () => {
     if (!newSummary.trim()) {
-      setActionError('새 속성 이름을 입력해주세요.')
+      setActionError('새 태그 이름을 입력해주세요.')
       return
     }
 
@@ -62,7 +62,7 @@ export default function CategoryManagementModal({
       onCategoriesUpdated?.()
     } catch (e) {
       setActionError(
-        e instanceof Error ? e.message : '속성을 추가하지 못했습니다.'
+        e instanceof Error ? e.message : '태그를 추가하지 못했습니다.'
       )
     } finally {
       setSavingId(null)
@@ -72,7 +72,7 @@ export default function CategoryManagementModal({
   const handleUpdate = async (category: Category) => {
     const value = editValues[category.id]?.trim()
     if (!value) {
-      setActionError('속성 이름을 입력해주세요.')
+      setActionError('태그 이름을 입력해주세요.')
       return
     }
     if (value === category.summary) {
@@ -88,7 +88,7 @@ export default function CategoryManagementModal({
       onCategoriesUpdated?.()
     } catch (e) {
       setActionError(
-        e instanceof Error ? e.message : '속성을 수정하지 못했습니다.'
+        e instanceof Error ? e.message : '태그를 수정하지 못했습니다.'
       )
     } finally {
       setSavingId(null)
@@ -113,10 +113,10 @@ export default function CategoryManagementModal({
         <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-6 py-4">
           <div>
             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-              속성 관리
+              태그 관리
             </h2>
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
-              워크스페이스별 사용자 정의 속성을 추가하거나 이름을 수정할 수 있어요.
+              워크스페이스별 사용자 정의 태그를 추가하거나 이름을 수정할 수 있어요.
             </p>
           </div>
           <button
@@ -131,7 +131,7 @@ export default function CategoryManagementModal({
         <div className="px-6 py-5 space-y-6 max-h-[70vh] overflow-y-auto">
           <section className="space-y-3">
             <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-              새 속성 추가
+              새 태그 추가
             </h3>
             <div className="flex gap-3 flex-col sm:flex-row">
               <input
@@ -147,7 +147,7 @@ export default function CategoryManagementModal({
                 disabled={savingId === 'new'}
                 className="rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 px-4 py-2 text-sm font-semibold text-white transition-colors"
               >
-                {savingId === 'new' ? '추가 중...' : '속성 추가'}
+                {savingId === 'new' ? '추가 중...' : '태그 추가'}
               </button>
             </div>
           </section>
@@ -155,17 +155,17 @@ export default function CategoryManagementModal({
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                등록된 속성 ({existingCount})
+                등록된 태그 ({existingCount})
               </h3>
             </div>
 
             {loading ? (
               <div className="py-10 text-center text-zinc-500 dark:text-zinc-400">
-                속성을 불러오는 중입니다...
+                태그를 불러오는 중입니다...
               </div>
             ) : categories.length === 0 ? (
               <div className="py-10 text-center text-zinc-500 dark:text-zinc-400 text-sm border border-dashed border-zinc-300 dark:border-zinc-700 rounded-lg">
-                아직 등록된 속성이 없습니다. 새 속성을 추가해보세요.
+                아직 등록된 태그가 없습니다. 새 태그를 추가해보세요.
               </div>
             ) : (
               <div className="space-y-3">
@@ -179,7 +179,7 @@ export default function CategoryManagementModal({
                     >
                       <div className="flex-1 w-full">
                         <label className="text-xs text-zinc-500 dark:text-zinc-400">
-                          속성 이름
+                          태그 이름
                         </label>
                         <input
                           type="text"

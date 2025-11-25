@@ -165,7 +165,7 @@ export default function SodeodCalendar({ onDateSelect, workspaceId, userId, onMo
                 onClick={onCategoryModalOpen}
                 className="px-3 py-2 text-sm font-semibold border border-blue-200 dark:border-blue-500 text-blue-600 dark:text-blue-200 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
               >
-                속성 관리
+                태그 관리
               </button>
             )}
             {onRoutineModalOpen && (

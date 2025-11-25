@@ -46,9 +46,9 @@ export default function WorkspacePage() {
   }, [categories])
   const getCategoryLabel = (id?: number | null) => {
     if (id === null || id === undefined) {
-      return '속성 없음'
+      return '태그 없음'
     }
-    return categoryMap.get(id) ?? '삭제된 속성'
+    return categoryMap.get(id) ?? '삭제된 태그'
   }
 
   useEffect(() => {

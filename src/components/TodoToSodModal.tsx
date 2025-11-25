@@ -69,7 +69,7 @@ export default function TodoToSodModal({
     setError(null)
 
     if (!categoryId) {
-      setError('활동 속성을 선택해주세요.')
+      setError('활동 태그를 선택해주세요.')
       setIsSubmitting(false)
       return
     }
@@ -128,7 +128,7 @@ export default function TodoToSodModal({
           <form onSubmit={handleSubmit} className="space-y-4">
             {!categoriesLoading && categories.length === 0 && (
               <div className="text-sm text-amber-900 dark:text-amber-100 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md px-3 py-2">
-                속성이 비어있습니다. 속성 관리에서 속성을 추가한 뒤 다시 시도해주세요.
+                태그가 비어있습니다. 태그 관리에서 태그를 추가한 뒤 다시 시도해주세요.
               </div>
             )}
             <div>
@@ -234,7 +234,7 @@ export default function TodoToSodModal({
 
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                활동 속성 *
+                활동 태그 *
               </label>
               <select
                 value={categoryId ?? ''}
@@ -246,7 +246,7 @@ export default function TodoToSodModal({
                 className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:bg-zinc-50 dark:disabled:bg-zinc-900/50"
               >
                 {categories.length === 0 ? (
-                  <option value="">등록된 속성이 없습니다</option>
+                  <option value="">등록된 태그가 없습니다</option>
                 ) : (
                   categories.map((option) => (
                     <option key={option.id} value={option.id}>

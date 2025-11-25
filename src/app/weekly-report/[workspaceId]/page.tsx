@@ -91,9 +91,9 @@ export default function WeeklyReportPage() {
   }, [categories]);
   const getCategoryLabel = (id?: number | null) => {
     if (id === null || id === undefined) {
-      return "속성 없음";
+      return "태그 없음";
     }
-    return categoryMeta.get(id) ?? `삭제된 속성 (#${id})`;
+    return categoryMeta.get(id) ?? `삭제된 태그 (#${id})`;
   };
   const getColorForCategory = (id?: number | null) => getCategoryColor(id ?? null);
 
@@ -787,7 +787,7 @@ export default function WeeklyReportPage() {
                                       <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 p-4 space-y-3">
                                         <div>
                                           <h4 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-                                            카테고리별 활동 비중
+                                            태그별 활동 비중
                                           </h4>
                                           <p className="text-xs text-zinc-500 dark:text-zinc-400">
                                             해당 주차 SoD 시간을 기준
@@ -802,7 +802,7 @@ export default function WeeklyReportPage() {
                                           />
                                           <div className="flex-1 space-y-1.5">
                                             <div className="grid grid-cols-3 text-xs text-zinc-500 dark:text-zinc-400 gap-2">
-                                              <span className="text-zinc-600 dark:text-zinc-200">카테고리</span>
+                                              <span className="text-zinc-600 dark:text-zinc-200">태그</span>
                                               <span className="text-center">시간</span>
                                               <span className="text-center">비중</span>
                                             </div>
@@ -838,7 +838,7 @@ export default function WeeklyReportPage() {
                                       <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 p-4 space-y-3">
                                         <div>
                                           <h4 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-                                            카테고리별 달성률
+                                            태그별 달성률
                                           </h4>
                                           <p className="text-xs text-zinc-500 dark:text-zinc-400">
                                             체크된 SoD 비율
@@ -882,7 +882,7 @@ export default function WeeklyReportPage() {
                                             기간별 비교 분석
                                           </h4>
                                           <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                                            각 속성별 전월, 지난주, 이번주 비교 (시간은 주간 평균 기준)
+                                            각 태그별 전월, 지난주, 이번주 비교 (시간은 주간 평균 기준)
                                           </p>
                                         </div>
 
