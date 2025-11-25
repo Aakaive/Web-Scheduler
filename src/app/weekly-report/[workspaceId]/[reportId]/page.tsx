@@ -457,7 +457,7 @@ export default function WeeklyReportDetailPage() {
       <main className="container mx-auto py-10 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
-            <div className="flex items-center justify-between mb-4 gap-4">
+            <div className="flex flex-wrap items-center justify-between mb-4 gap-4">
               <div className="flex-1 min-w-0">
                 <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
                   주간 레포트 작성
@@ -718,15 +718,44 @@ export default function WeeklyReportDetailPage() {
             <div className="flex-1 min-w-0 space-y-6">
               <div className="bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 p-6 space-y-6">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                  <button
-                    onClick={handleAnalyze}
-                    disabled={analysisLoading || !report}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors disabled:opacity-60"
-                  >
-                    {analysisLoading ? "주간 분석 중..." : "주간 분석"}
-                  </button>
-                  <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                    자동 저장이 지원되지 않으니 작성 후 저장 버튼을 눌러주세요.
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={handleAnalyze}
+                      disabled={analysisLoading || !report}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-sm font-semibold text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors disabled:opacity-60"
+                    >
+                      <svg
+                        className="w-5 h-5 text-current"
+                        aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                      >
+                        <path
+                          stroke="currentColor"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M17.651 7.65a7.131 7.131 0 0 0-12.68 3.15M18.001 4v4h-4m-7.652 8.35a7.13 7.13 0 0 0 12.68-3.15M6 20v-4h4"
+                        />
+                      </svg>
+                      <span>{analysisLoading ? "주간 분석 중..." : "주간 분석"}</span>
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <button
+                      onClick={handleCancel}
+                      className="px-4 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 disabled:bg-amber-200 text-white text-sm font-semibold transition-colors"
+                    >
+                      {saving ? "저장 중..." : "저장"}
+                    </button>
                   </div>
                 </div>
 
@@ -840,17 +869,6 @@ export default function WeeklyReportDetailPage() {
                           const prevWeekMap = new Map(previousWeekMetrics.map(m => [m.category_id, m]));
                           const prevMonthMap = new Map(previousMonthMetrics.map(m => [m.category_id, m]));
 
-                          // 최대 시간 계산 (스케일링용)
-                          const maxMinutesValues = Array.from(allCategoryIds).map(catId => {
-                            const current = currentMap.get(catId)?.minutes || 0;
-                            const prevWeek = prevWeekMap.get(catId)?.minutes || 0;
-                            const prevMonth = prevMonthMap.get(catId)?.minutes || 0;
-                            return Math.max(current, prevWeek, prevMonth / previousMonthWeekCount);
-                          });
-                          const maxMinutes = maxMinutesValues.length > 0 
-                            ? Math.max(...maxMinutesValues, 1) // 최소 1로 설정
-                            : 1;
-
                           return Array.from(allCategoryIds).map(categoryId => {
                             const current = currentMap.get(categoryId);
                             const prevWeek = prevWeekMap.get(categoryId);
@@ -886,10 +904,9 @@ export default function WeeklyReportDetailPage() {
                             const lightColor = getLightColor();
 
                             const maxValue = Math.max(
-                              currentMinutes, 
-                              prevWeekMinutes, 
-                              prevMonthWeeklyAvg, 
-                              maxMinutes * 0.1,
+                              currentMinutes,
+                              prevWeekMinutes,
+                              prevMonthWeeklyAvg,
                               1 // 최소 1로 설정하여 0으로 나누는 것 방지
                             );
 
@@ -1093,7 +1110,7 @@ export default function WeeklyReportDetailPage() {
                         value={formState.kpt_keep}
                         onChange={(e) => handleInputChange("kpt_keep", e.target.value)}
                         className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950/40 px-3 py-2 min-h-[120px] text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:focus:ring-emerald-500/40"
-                        placeholder="이번 주에 유지하고 싶은 성과를 기록해주세요."
+                        placeholder="이번 주에 유지한 성과를 기록해주세요."
                       />
                     </label>
 
@@ -1120,14 +1137,14 @@ export default function WeeklyReportDetailPage() {
                           Try
                         </span>
                         <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                          다음 주에 시도할 액션 아이템
+                          시도해 볼 아이디어
                         </p>
                       </div>
                       <textarea
                         value={formState.kpt_try}
                         onChange={(e) => handleInputChange("kpt_try", e.target.value)}
                         className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950/40 px-3 py-2 min-h-[120px] text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-sky-200 dark:focus:ring-sky-500/40"
-                        placeholder="다음 주에 시도하고 싶은 아이디어를 기록해주세요."
+                        placeholder="문제해결을 위해 시도해보거나 시도해볼 만한 도전을 기록해주세요."
                       />
                     </label>
                   </div>

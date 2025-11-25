@@ -815,9 +815,6 @@ export default function WeeklyReportPage() {
                                           <h4 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
                                             태그별 활동 비중
                                           </h4>
-                                          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                                            해당 주차 SoD 시간을 기준
-                                          </p>
                                         </div>
                                         <div className="flex items-center gap-4">
                                           <div
@@ -828,7 +825,7 @@ export default function WeeklyReportPage() {
                                           />
                                           <div className="flex-1 space-y-1.5">
                                             <div className="grid grid-cols-3 text-xs text-zinc-500 dark:text-zinc-400 gap-2">
-                                              <span className="text-zinc-600 dark:text-zinc-200">태그</span>
+                                              <span className="text-center text-zinc-600 dark:text-zinc-200">태그</span>
                                               <span className="text-center">시간</span>
                                               <span className="text-center">비중</span>
                                             </div>
@@ -848,7 +845,7 @@ export default function WeeklyReportPage() {
                                                     />
                                                     <span>{getCategoryLabel(metric.category_id)}</span>
                                                   </div>
-                                                  <span className="text-center text-zinc-500 dark:text-zinc-400">
+                                                  <span className="text-right text-zinc-500 dark:text-zinc-400">
                                                     {formatHours(metric.minutes)}h
                                                   </span>
                                                   <span className="text-right text-zinc-500 dark:text-zinc-400">
@@ -866,9 +863,6 @@ export default function WeeklyReportPage() {
                                           <h4 className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
                                             태그별 달성률
                                           </h4>
-                                          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                                            체크된 SoD 비율
-                                          </p>
                                         </div>
                                         <div className="flex items-end gap-3 h-32">
                                           {sortedMetrics.map((metric) => (
@@ -907,9 +901,7 @@ export default function WeeklyReportPage() {
                                           <h4 className="text-sm font-semibold text-zinc-700 dark:text-zinc-200 mb-1">
                                             기간별 비교 분석
                                           </h4>
-                                          <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                                            각 태그별 전월, 지난주, 이번주 비교 (시간은 주간 평균 기준)
-                                          </p>
+                                          <p className="text-xs text-zinc-500 dark:text-zinc-400">(주간 평균)</p>
                                         </div>
 
                                         {comparisonLoadingMap[report.id] ? (
@@ -1145,13 +1137,7 @@ export default function WeeklyReportPage() {
                                     <h4 className="text-sm font-semibold text-zinc-700 dark:text-zinc-100">
                                       KPT 회고
                                     </h4>
-                                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                                      요약된 Keep · Problem · Try 기록
-                                    </p>
                                   </div>
-                                  <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
-                                    상세 페이지에서 편집 가능
-                                  </span>
                                 </div>
 
                                 <div className="grid gap-3 md:grid-cols-3">
