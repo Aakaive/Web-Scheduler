@@ -834,3 +834,144 @@ export const updateReport = async (
 
   return data as Report
 }
+
+// 이전 주차 레포트 조회 (7일 전 주차)
+export const getPreviousWeekReport = async (
+  workspaceId: string,
+  userId: string,
+  currentStartDate: string
+) => {
+  const currentDate = new Date(currentStartDate);
+  const previousWeekStart = new Date(currentDate);
+  previousWeekStart.setDate(currentDate.getDate() - 7);
+  
+  const startDate = formatDate(previousWeekStart);
+  
+  const { data, error } = await supabase
+    .from('reports')
+    .select('*')
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', userId)
+    .eq('start_date', startDate)
+    .maybeSingle()
+    
+  if (error) {
+    console.error('Error fetching previous week report:', error)
+    return null
+  }
+  
+  return data as Report | null
+}
+
+// 전월의 같은 주차 레포트 조회
+export const getPreviousMonthReport = async (
+  workspaceId: string,
+  userId: string,
+  currentStartDate: string,
+  weekNumber: number
+) => {
+  const currentDate = new Date(currentStartDate);
+  const prevMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+  
+  // 전월의 같은 주차를 찾기 위해 전월의 첫 번째 월요일 찾기
+  const firstDay = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 1);
+  let firstMonday = new Date(firstDay);
+  const dayOfWeek = firstMonday.getDay();
+  const daysToMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek) % 7 || 7;
+  firstMonday.setDate(firstDay.getDate() + (daysToMonday % 7 === 1 ? 0 : daysToMonday - 7));
+  
+  // weekNumber 주차의 시작일 계산
+  const targetStartDate = new Date(firstMonday);
+  targetStartDate.setDate(firstMonday.getDate() + (weekNumber - 1) * 7);
+  const startDate = formatDate(targetStartDate);
+  
+  const { data, error } = await supabase
+    .from('reports')
+    .select('*')
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', userId)
+    .eq('start_date', startDate)
+    .maybeSingle()
+    
+  if (error) {
+    console.error('Error fetching previous month report:', error)
+    return null
+  }
+  
+  return data as Report | null
+}
+
+// 전월의 전체 레포트들 조회 및 주차 수 계산
+export const getPreviousMonthReportsWithWeekCount = async (
+  workspaceId: string,
+  userId: string,
+  currentStartDate: string
+) => {
+  const currentDate = new Date(currentStartDate);
+  const prevMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+  const prevMonthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0);
+  
+  const startDate = formatDate(prevMonthStart);
+  const endDate = formatDate(prevMonthEnd);
+  
+  const { data, error } = await supabase
+    .from('reports')
+    .select('*')
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', userId)
+    .gte('start_date', startDate)
+    .lte('start_date', endDate)
+    .order('start_date', { ascending: true })
+    
+  if (error) {
+    console.error('Error fetching previous month reports:', error)
+    return { reports: [], weekCount: 0 }
+  }
+  
+  // 고유한 주차 수 계산
+  const uniqueWeeks = new Set((data as Report[]).map(r => r.week_number));
+  const weekCount = uniqueWeeks.size || 1; // 최소 1로 설정하여 0으로 나누는 것 방지
+  
+  return { 
+    reports: data as Report[], 
+    weekCount 
+  }
+}
+
+// 여러 레포트 ID로 메트릭 집계
+export const getAggregatedMetricsFromReports = async (reportIds: number[]) => {
+  if (reportIds.length === 0) return []
+  
+  const { data, error } = await supabase
+    .from('report_metrics')
+    .select('*')
+    .in('report_id', reportIds)
+    
+  if (error) {
+    console.error('Error fetching aggregated metrics:', error)
+    return []
+  }
+  
+  if (!data || data.length === 0) return []
+  
+  // 카테고리별로 집계
+  const aggregated = new Map<number | null, { minutes: number; totalRate: number; count: number }>()
+  
+  for (const metric of data as ReportMetric[]) {
+    const key = metric.category_id
+    if (!aggregated.has(key)) {
+      aggregated.set(key, { minutes: 0, totalRate: 0, count: 0 })
+    }
+    const agg = aggregated.get(key)!
+    agg.minutes += metric.minutes
+    agg.totalRate += metric.rate
+    agg.count += 1
+  }
+  
+  // 평균 rate 계산 및 반환
+  return Array.from(aggregated.entries()).map(([category_id, agg]) => ({
+    category_id,
+    minutes: agg.minutes,
+    rate: agg.count > 0 ? agg.totalRate / agg.count : 0,
+  }))
+}

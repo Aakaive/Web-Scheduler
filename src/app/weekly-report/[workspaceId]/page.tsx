@@ -11,6 +11,10 @@ import {
   getReportMetrics,
   getReportsByMonth,
   supabase,
+  getPreviousWeekReport,
+  getPreviousMonthReport,
+  getPreviousMonthReportsWithWeekCount,
+  getAggregatedMetricsFromReports,
 } from "@/lib/supabase";
 import { useWorkspaceCategories } from "@/hooks/useWorkspaceCategories";
 import { getCategoryColor } from "@/lib/categoryColors";
@@ -29,7 +33,15 @@ const formatReportLabel = (report: Report) => {
   return `${year}년 ${month}월 ${report.week_number}주차`;
 };
 
-const formatHours = (minutes: number) => (minutes / 60).toFixed(1);
+  const formatHours = (minutes: number) => (minutes / 60).toFixed(1);
+
+  // hex 색상을 rgba로 변환 (투명도 포함)
+  const hexToRgba = (hex: string, alpha: number) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
 
 export default function WeeklyReportPage() {
   const router = useRouter();
@@ -54,6 +66,10 @@ export default function WeeklyReportPage() {
   const [expandedReportIds, setExpandedReportIds] = useState<number[]>([]);
   const [metricsMap, setMetricsMap] = useState<Record<number, ReportMetric[]>>({});
   const [metricsLoadingId, setMetricsLoadingId] = useState<number | null>(null);
+  const [previousWeekMetricsMap, setPreviousWeekMetricsMap] = useState<Record<number, ReportMetric[]>>({});
+  const [previousMonthMetricsMap, setPreviousMonthMetricsMap] = useState<Record<number, Array<{ category_id: number | null; minutes: number; rate: number }>>>({});
+  const [previousMonthWeekCountMap, setPreviousMonthWeekCountMap] = useState<Record<number, number>>({});
+  const [comparisonLoadingMap, setComparisonLoadingMap] = useState<Record<number, boolean>>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingInitialExpandId, setPendingInitialExpandId] = useState<number | null>(() => {
     const param = searchParams?.get("reportId");
@@ -187,8 +203,9 @@ export default function WeeklyReportPage() {
       prev.includes(targetId) ? prev : [...prev, targetId]
     );
 
-    if (!metricsMap[targetId]) {
-      (async () => {
+    const loadDataForReport = async () => {
+      // 메트릭 로드
+      if (!metricsMap[targetId]) {
         try {
           setMetricsLoadingId(targetId);
           const metrics = await getReportMetrics(targetId);
@@ -198,9 +215,66 @@ export default function WeeklyReportPage() {
         } finally {
           setMetricsLoadingId(null);
         }
-      })();
-    }
+      }
 
+      // 비교 데이터 로드
+      const report = reports.find(r => r.id === targetId);
+      if (report && userId && !previousWeekMetricsMap[targetId] && !comparisonLoadingMap[targetId]) {
+        try {
+          setComparisonLoadingMap(prev => ({ ...prev, [targetId]: true }));
+          
+          const prevWeekReport = await getPreviousWeekReport(
+            workspaceId,
+            userId,
+            report.start_date
+          );
+          
+          if (prevWeekReport) {
+            const prevWeekMetrics = await getReportMetrics(prevWeekReport.id);
+            setPreviousWeekMetricsMap(prev => ({ ...prev, [targetId]: prevWeekMetrics }));
+          } else {
+            setPreviousWeekMetricsMap(prev => ({ ...prev, [targetId]: [] }));
+          }
+          
+          const { reports: prevMonthReports, weekCount } = await getPreviousMonthReportsWithWeekCount(
+            workspaceId,
+            userId,
+            report.start_date
+          );
+          
+          setPreviousMonthWeekCountMap(prev => ({ ...prev, [targetId]: weekCount }));
+          
+          if (prevMonthReports.length > 0) {
+            const reportIds = prevMonthReports.map(r => r.id);
+            const aggregatedMetrics = await getAggregatedMetricsFromReports(reportIds);
+            setPreviousMonthMetricsMap(prev => ({ ...prev, [targetId]: aggregatedMetrics }));
+          } else {
+            const prevMonthReport = await getPreviousMonthReport(
+              workspaceId,
+              userId,
+              report.start_date,
+              report.week_number
+            );
+            
+            if (prevMonthReport) {
+              const prevMonthMetrics = await getReportMetrics(prevMonthReport.id);
+              setPreviousMonthMetricsMap(prev => ({ ...prev, [targetId]: prevMonthMetrics }));
+              setPreviousMonthWeekCountMap(prev => ({ ...prev, [targetId]: 1 }));
+            } else {
+              setPreviousMonthMetricsMap(prev => ({ ...prev, [targetId]: [] }));
+            }
+          }
+        } catch (error) {
+          console.error("Error loading comparison data:", error);
+          setPreviousWeekMetricsMap(prev => ({ ...prev, [targetId]: [] }));
+          setPreviousMonthMetricsMap(prev => ({ ...prev, [targetId]: [] }));
+        } finally {
+          setComparisonLoadingMap(prev => ({ ...prev, [targetId]: false }));
+        }
+      }
+    };
+
+    loadDataForReport();
     setPendingInitialExpandId(null);
     clearReportIdParam();
   }, [pendingInitialExpandId, reports, metricsMap, clearReportIdParam]);
@@ -235,15 +309,77 @@ export default function WeeklyReportPage() {
       isCurrentlyExpanded ? prev.filter((id) => id !== reportId) : [...prev, reportId]
     );
 
-    if (!isCurrentlyExpanded && !metricsMap[reportId]) {
-      try {
-        setMetricsLoadingId(reportId);
-        const metrics = await getReportMetrics(reportId);
-        setMetricsMap((prev) => ({ ...prev, [reportId]: metrics }));
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setMetricsLoadingId(null);
+    if (!isCurrentlyExpanded) {
+      // 메트릭 로드
+      if (!metricsMap[reportId]) {
+        try {
+          setMetricsLoadingId(reportId);
+          const metrics = await getReportMetrics(reportId);
+          setMetricsMap((prev) => ({ ...prev, [reportId]: metrics }));
+        } catch (error) {
+          console.error(error);
+        } finally {
+          setMetricsLoadingId(null);
+        }
+      }
+
+      // 비교 데이터 로드
+      const report = reports.find(r => r.id === reportId);
+      if (report && userId && !previousWeekMetricsMap[reportId] && !comparisonLoadingMap[reportId]) {
+        try {
+          setComparisonLoadingMap(prev => ({ ...prev, [reportId]: true }));
+          
+          // 전주 레포트 조회
+          const prevWeekReport = await getPreviousWeekReport(
+            workspaceId,
+            userId,
+            report.start_date
+          );
+          
+          if (prevWeekReport) {
+            const prevWeekMetrics = await getReportMetrics(prevWeekReport.id);
+            setPreviousWeekMetricsMap(prev => ({ ...prev, [reportId]: prevWeekMetrics }));
+          } else {
+            setPreviousWeekMetricsMap(prev => ({ ...prev, [reportId]: [] }));
+          }
+          
+          // 전월 레포트들 조회
+          const { reports: prevMonthReports, weekCount } = await getPreviousMonthReportsWithWeekCount(
+            workspaceId,
+            userId,
+            report.start_date
+          );
+          
+          setPreviousMonthWeekCountMap(prev => ({ ...prev, [reportId]: weekCount }));
+          
+          if (prevMonthReports.length > 0) {
+            const reportIds = prevMonthReports.map(r => r.id);
+            const aggregatedMetrics = await getAggregatedMetricsFromReports(reportIds);
+            setPreviousMonthMetricsMap(prev => ({ ...prev, [reportId]: aggregatedMetrics }));
+          } else {
+            // 전월의 같은 주차 레포트 조회 시도
+            const prevMonthReport = await getPreviousMonthReport(
+              workspaceId,
+              userId,
+              report.start_date,
+              report.week_number
+            );
+            
+            if (prevMonthReport) {
+              const prevMonthMetrics = await getReportMetrics(prevMonthReport.id);
+              setPreviousMonthMetricsMap(prev => ({ ...prev, [reportId]: prevMonthMetrics }));
+              setPreviousMonthWeekCountMap(prev => ({ ...prev, [reportId]: 1 }));
+            } else {
+              setPreviousMonthMetricsMap(prev => ({ ...prev, [reportId]: [] }));
+            }
+          }
+        } catch (error) {
+          console.error("Error loading comparison data:", error);
+          setPreviousWeekMetricsMap(prev => ({ ...prev, [reportId]: [] }));
+          setPreviousMonthMetricsMap(prev => ({ ...prev, [reportId]: [] }));
+        } finally {
+          setComparisonLoadingMap(prev => ({ ...prev, [reportId]: false }));
+        }
       }
     }
   };
@@ -642,6 +778,256 @@ export default function WeeklyReportPage() {
                                     <div className="rounded-xl border border-dashed border-amber-200 dark:border-amber-800 p-4 text-sm text-amber-700 dark:text-amber-300">
                                       주간 분석 결과가 없습니다. 상세 페이지에서 주간 분석을 실행해 보세요.
                                     </div>
+                                  )}
+
+                                  {/* 비교 분석 그래프 */}
+                                  {metrics.length > 0 && (
+                                    (previousWeekMetricsMap[report.id]?.length > 0 || previousMonthMetricsMap[report.id]?.length > 0) ? (
+                                      <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 p-4 space-y-4">
+                                        <div>
+                                          <h4 className="text-sm font-semibold text-zinc-700 dark:text-zinc-200 mb-1">
+                                            기간별 비교 분석
+                                          </h4>
+                                          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                                            각 속성별 전월, 지난주, 이번주 비교 (시간은 주간 평균 기준)
+                                          </p>
+                                        </div>
+
+                                        {comparisonLoadingMap[report.id] ? (
+                                          <div className="py-6 text-center text-xs text-zinc-500 dark:text-zinc-400">
+                                            비교 데이터를 불러오는 중...
+                                          </div>
+                                        ) : (
+                                          <div className="space-y-6">
+                                            {(() => {
+                                              const previousWeekMetrics = previousWeekMetricsMap[report.id] || [];
+                                              const previousMonthMetrics = previousMonthMetricsMap[report.id] || [];
+                                              const previousMonthWeekCount = previousMonthWeekCountMap[report.id] || 1;
+
+                                              // 모든 카테고리 수집
+                                              const allCategoryIds = new Set<number | null>();
+                                              metrics.forEach(m => allCategoryIds.add(m.category_id));
+                                              previousWeekMetrics.forEach(m => allCategoryIds.add(m.category_id));
+                                              previousMonthMetrics.forEach(m => allCategoryIds.add(m.category_id));
+
+                                              // 카테고리별 데이터 매핑
+                                              const currentMap = new Map(metrics.map(m => [m.category_id, m]));
+                                              const prevWeekMap = new Map(previousWeekMetrics.map(m => [m.category_id, m]));
+                                              const prevMonthMap = new Map(previousMonthMetrics.map(m => [m.category_id, m]));
+
+                                              // 최대 시간 계산 (스케일링용)
+                                              const maxMinutesValues = Array.from(allCategoryIds).map(catId => {
+                                                const current = currentMap.get(catId)?.minutes || 0;
+                                                const prevWeek = prevWeekMap.get(catId)?.minutes || 0;
+                                                const prevMonth = prevMonthMap.get(catId)?.minutes || 0;
+                                                return Math.max(current, prevWeek, prevMonth / previousMonthWeekCount);
+                                              });
+                                              const maxMinutes = maxMinutesValues.length > 0 
+                                                ? Math.max(...maxMinutesValues, 1)
+                                                : 1;
+
+                                              return Array.from(allCategoryIds).map(categoryId => {
+                                                const current = currentMap.get(categoryId);
+                                                const prevWeek = prevWeekMap.get(categoryId);
+                                                const prevMonth = prevMonthMap.get(categoryId);
+
+                                                // 전월은 주간 평균 계산
+                                                const prevMonthWeeklyAvg = prevMonth 
+                                                  ? prevMonth.minutes / previousMonthWeekCount 
+                                                  : 0;
+                                                const prevMonthRate = prevMonth ? prevMonth.rate : 0;
+
+                                                const currentMinutes = current?.minutes || 0;
+                                                const prevWeekMinutes = prevWeek?.minutes || 0;
+
+                                                const currentRate = current?.rate || 0;
+                                                const prevWeekRate = prevWeek?.rate || 0;
+
+                                                const categoryColor = getColorForCategory(categoryId);
+                                                
+                                                // 연한색 계산
+                                                const lightColor = categoryColor.startsWith('#')
+                                                  ? hexToRgba(categoryColor, 0.3)
+                                                  : categoryColor;
+
+                                                const maxValue = Math.max(
+                                                  currentMinutes, 
+                                                  prevWeekMinutes, 
+                                                  prevMonthWeeklyAvg, 
+                                                  maxMinutes * 0.1,
+                                                  1
+                                                );
+
+                                                return (
+                                                  <div key={categoryId ?? 'none'} className="space-y-2">
+                                                    <div className="flex items-center justify-between">
+                                                      <div className="flex items-center gap-2">
+                                                        <span
+                                                          className="inline-block w-3 h-3 rounded-full"
+                                                          style={{ backgroundColor: categoryColor }}
+                                                        />
+                                                        <span className="text-xs font-medium text-zinc-700 dark:text-zinc-200">
+                                                          {getCategoryLabel(categoryId)}
+                                                        </span>
+                                                      </div>
+                                                    </div>
+                                                    
+                                                    <div className="space-y-2">
+                                                      {/* 전월 */}
+                                                      <div className="flex items-center gap-2">
+                                                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 w-12 text-right">
+                                                          전월
+                                                        </span>
+                                                        <div className="flex-1 relative h-5 bg-zinc-100 dark:bg-zinc-800 rounded overflow-hidden">
+                                                          {prevMonthWeeklyAvg > 0 ? (
+                                                            <div
+                                                              className="h-full flex transition-all duration-300"
+                                                              style={{
+                                                                width: `${(prevMonthWeeklyAvg / maxValue) * 100}%`,
+                                                              }}
+                                                            >
+                                                              {/* 달성 부분 */}
+                                                              <div
+                                                                className="h-full flex items-center pl-1 relative"
+                                                                style={{
+                                                                  width: `${Math.min(100, Math.max(0, prevMonthRate))}%`,
+                                                                  backgroundColor: categoryColor,
+                                                                }}
+                                                              >
+                                                                {prevMonthRate > 0 && (
+                                                                  <span className="text-[9px] font-medium text-white dark:text-zinc-900 whitespace-nowrap">
+                                                                    {formatHours(prevMonthWeeklyAvg * (prevMonthRate / 100))}h
+                                                                  </span>
+                                                                )}
+                                                              </div>
+                                                              {/* 미달성 부분 */}
+                                                              {prevMonthRate < 100 && (
+                                                                <div
+                                                                  className="h-full flex-1"
+                                                                  style={{
+                                                                    backgroundColor: lightColor,
+                                                                  }}
+                                                                />
+                                                              )}
+                                                              {/* 시간 표시 */}
+                                                              <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[9px] font-medium text-zinc-700 dark:text-zinc-200">
+                                                                {formatHours(prevMonthWeeklyAvg)}h
+                                                              </span>
+                                                            </div>
+                                                          ) : (
+                                                            <span className="absolute inset-0 flex items-center justify-center text-[9px] text-zinc-400 dark:text-zinc-500">
+                                                              -
+                                                            </span>
+                                                          )}
+                                                        </div>
+                                                      </div>
+
+                                                      {/* 지난주 */}
+                                                      <div className="flex items-center gap-2">
+                                                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 w-12 text-right">
+                                                          지난주
+                                                        </span>
+                                                        <div className="flex-1 relative h-5 bg-zinc-100 dark:bg-zinc-800 rounded overflow-hidden">
+                                                          {prevWeekMinutes > 0 ? (
+                                                            <div
+                                                              className="h-full flex transition-all duration-300"
+                                                              style={{
+                                                                width: `${(prevWeekMinutes / maxValue) * 100}%`,
+                                                              }}
+                                                            >
+                                                              {/* 달성 부분 */}
+                                                              <div
+                                                                className="h-full flex items-center pl-1 relative"
+                                                                style={{
+                                                                  width: `${Math.min(100, Math.max(0, prevWeekRate))}%`,
+                                                                  backgroundColor: categoryColor,
+                                                                }}
+                                                              >
+                                                                {prevWeekRate > 0 && (
+                                                                  <span className="text-[9px] font-medium text-white dark:text-zinc-900 whitespace-nowrap">
+                                                                    {formatHours(prevWeekMinutes * (prevWeekRate / 100))}h
+                                                                  </span>
+                                                                )}
+                                                              </div>
+                                                              {/* 미달성 부분 */}
+                                                              {prevWeekRate < 100 && (
+                                                                <div
+                                                                  className="h-full flex-1"
+                                                                  style={{
+                                                                    backgroundColor: lightColor,
+                                                                  }}
+                                                                />
+                                                              )}
+                                                              {/* 시간 표시 */}
+                                                              <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[9px] font-medium text-zinc-700 dark:text-zinc-200">
+                                                                {formatHours(prevWeekMinutes)}h
+                                                              </span>
+                                                            </div>
+                                                          ) : (
+                                                            <span className="absolute inset-0 flex items-center justify-center text-[9px] text-zinc-400 dark:text-zinc-500">
+                                                              -
+                                                            </span>
+                                                          )}
+                                                        </div>
+                                                      </div>
+
+                                                      {/* 이번주 */}
+                                                      <div className="flex items-center gap-2">
+                                                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 w-12 text-right">
+                                                          이번주
+                                                        </span>
+                                                        <div className="flex-1 relative h-5 bg-zinc-100 dark:bg-zinc-800 rounded overflow-hidden">
+                                                          {currentMinutes > 0 ? (
+                                                            <div
+                                                              className="h-full flex transition-all duration-300"
+                                                              style={{
+                                                                width: `${(currentMinutes / maxValue) * 100}%`,
+                                                              }}
+                                                            >
+                                                              {/* 달성 부분 */}
+                                                              <div
+                                                                className="h-full flex items-center pl-1 relative"
+                                                                style={{
+                                                                  width: `${Math.min(100, Math.max(0, currentRate))}%`,
+                                                                  backgroundColor: categoryColor,
+                                                                }}
+                                                              >
+                                                                {currentRate > 0 && (
+                                                                  <span className="text-[9px] font-medium text-white dark:text-zinc-900 whitespace-nowrap">
+                                                                    {formatHours(currentMinutes * (currentRate / 100))}h
+                                                                  </span>
+                                                                )}
+                                                              </div>
+                                                              {/* 미달성 부분 */}
+                                                              {currentRate < 100 && (
+                                                                <div
+                                                                  className="h-full flex-1"
+                                                                  style={{
+                                                                    backgroundColor: lightColor,
+                                                                  }}
+                                                                />
+                                                              )}
+                                                              {/* 시간 표시 */}
+                                                              <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[9px] font-medium text-zinc-700 dark:text-zinc-200">
+                                                                {formatHours(currentMinutes)}h
+                                                              </span>
+                                                            </div>
+                                                          ) : (
+                                                            <span className="absolute inset-0 flex items-center justify-center text-[9px] text-zinc-400 dark:text-zinc-500">
+                                                              -
+                                                            </span>
+                                                          )}
+                                                        </div>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                );
+                                              });
+                                            })()}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : null
                                   )}
                                 </>
                               )}
