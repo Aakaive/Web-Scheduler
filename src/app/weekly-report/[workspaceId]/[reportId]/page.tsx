@@ -125,7 +125,13 @@ export default function WeeklyReportDetailPage() {
       setReport(updated);
       setIsDirty(false);
       alert("레포트를 저장했습니다.");
-      router.push(`/weekly-report/${workspaceId}?reportId=${reportId}`);
+      const start = new Date(updated.start_date);
+      const params = new URLSearchParams({
+        reportId: String(reportId),
+        year: String(start.getFullYear()),
+        month: String(start.getMonth() + 1),
+      });
+      router.push(`/weekly-report/${workspaceId}?${params.toString()}`);
     } catch (error) {
       console.error(error);
       alert("레포트를 저장하지 못했습니다. 잠시 후 다시 시도해주세요.");
@@ -220,8 +226,12 @@ export default function WeeklyReportDetailPage() {
     }
   };
 
-  const totalMinutes = metrics.reduce((sum, metric) => sum + metric.minutes, 0);
-  const pieSegments = metrics.map((metric) => {
+  const sortedMetrics = useMemo(
+    () => [...metrics].sort((a, b) => b.minutes - a.minutes),
+    [metrics]
+  );
+  const totalMinutes = sortedMetrics.reduce((sum, metric) => sum + metric.minutes, 0);
+  const pieSegments = sortedMetrics.map((metric) => {
     const percentage = totalMinutes === 0 ? 0 : (metric.minutes / totalMinutes) * 100;
     return {
       color: getColorForCategory(metric.category_id),
@@ -615,7 +625,7 @@ export default function WeeklyReportDetailPage() {
                         </p>
                       </div>
                       <div className="flex items-end gap-4 h-48">
-                        {metrics.map((metric) => (
+                        {sortedMetrics.map((metric) => (
                           <div key={metric.id} className="flex-1 flex flex-col items-center gap-2">
                             <div className="relative w-full h-32 bg-zinc-100 dark:bg-zinc-800 rounded-lg overflow-hidden">
                               <div

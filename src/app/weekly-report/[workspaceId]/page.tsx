@@ -1,10 +1,17 @@
 'use client'
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import WeeklyReportCreateModal from "@/components/WeeklyReportCreateModal";
-import { Report, ReportMetric, getReportMetrics, getReportsByMonth, supabase } from "@/lib/supabase";
+import {
+  Report,
+  ReportMetric,
+  getReportById,
+  getReportMetrics,
+  getReportsByMonth,
+  supabase,
+} from "@/lib/supabase";
 import { useWorkspaceCategories } from "@/hooks/useWorkspaceCategories";
 import { getCategoryColor } from "@/lib/categoryColors";
 
@@ -31,8 +38,16 @@ export default function WeeklyReportPage() {
   const workspaceId = params?.workspaceId ?? "";
   const today = useMemo(() => new Date(), []);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
-  const [filterYear, setFilterYear] = useState(today.getFullYear());
-  const [filterMonth, setFilterMonth] = useState(today.getMonth() + 1);
+  const [filterYear, setFilterYear] = useState(() => {
+    const paramYear = searchParams?.get("year");
+    const parsed = paramYear ? Number(paramYear) : NaN;
+    return !Number.isNaN(parsed) ? parsed : today.getFullYear();
+  });
+  const [filterMonth, setFilterMonth] = useState(() => {
+    const paramMonth = searchParams?.get("month");
+    const parsed = paramMonth ? Number(paramMonth) : NaN;
+    return !Number.isNaN(parsed) ? parsed : today.getMonth() + 1;
+  });
   const [userId, setUserId] = useState<string | null>(null);
   const [loadingReports, setLoadingReports] = useState(true);
   const [reports, setReports] = useState<Report[]>([]);
@@ -70,6 +85,46 @@ export default function WeeklyReportPage() {
   }, []);
 
   useEffect(() => {
+    const paramYear = searchParams?.get("year");
+    const paramMonth = searchParams?.get("month");
+    const parsedYear = paramYear ? Number(paramYear) : NaN;
+    const parsedMonth = paramMonth ? Number(paramMonth) : NaN;
+    const resolvedYear = !Number.isNaN(parsedYear) ? parsedYear : today.getFullYear();
+    const resolvedMonth = !Number.isNaN(parsedMonth) ? parsedMonth : today.getMonth() + 1;
+    setFilterYear((prev) => (prev === resolvedYear ? prev : resolvedYear));
+    setFilterMonth((prev) => (prev === resolvedMonth ? prev : resolvedMonth));
+  }, [searchParams, today]);
+
+  const syncFilter = useCallback(
+    (year: number, month: number, options?: { preserveReportId?: boolean }) => {
+      setFilterYear(year);
+      setFilterMonth(month);
+      const params = new URLSearchParams(searchParams?.toString() ?? "");
+      params.set("year", String(year));
+      params.set("month", String(month));
+      if (!options?.preserveReportId) {
+        params.delete("reportId");
+      }
+      const query = params.toString();
+      router.replace(
+        `/weekly-report/${workspaceId}${query ? `?${query}` : ""}`,
+        { scroll: false }
+      );
+    },
+    [router, searchParams, workspaceId]
+  );
+
+  const clearReportIdParam = useCallback(() => {
+    const params = new URLSearchParams(searchParams?.toString() ?? "");
+    params.delete("reportId");
+    const query = params.toString();
+    router.replace(
+      `/weekly-report/${workspaceId}${query ? `?${query}` : ""}`,
+      { scroll: false }
+    );
+  }, [router, searchParams, workspaceId]);
+
+  useEffect(() => {
     const loadReports = async () => {
       if (!workspaceId) return;
       try {
@@ -87,12 +142,44 @@ export default function WeeklyReportPage() {
   }, [workspaceId, filterYear, filterMonth]);
 
   useEffect(() => {
+    if (!pendingInitialExpandId || !workspaceId || !userId) return;
+    let cancelled = false;
+
+    const ensureFilterForPendingReport = async () => {
+      try {
+        const target = await getReportById(pendingInitialExpandId, workspaceId, userId);
+        if (!target) {
+          if (!cancelled) {
+            setPendingInitialExpandId(null);
+            clearReportIdParam();
+          }
+          return;
+        }
+
+        const start = new Date(target.start_date);
+        const targetYear = start.getFullYear();
+        const targetMonth = start.getMonth() + 1;
+
+        if (!cancelled && (filterYear !== targetYear || filterMonth !== targetMonth)) {
+          syncFilter(targetYear, targetMonth, { preserveReportId: true });
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    ensureFilterForPendingReport();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pendingInitialExpandId, workspaceId, userId, filterYear, filterMonth, syncFilter, clearReportIdParam]);
+
+  useEffect(() => {
     if (!pendingInitialExpandId || reports.length === 0) return;
     const targetId = pendingInitialExpandId;
     const exists = reports.some((report) => report.id === targetId);
     if (!exists) {
-      setPendingInitialExpandId(null);
-      router.replace(`/weekly-report/${workspaceId}`);
       return;
     }
 
@@ -115,12 +202,22 @@ export default function WeeklyReportPage() {
     }
 
     setPendingInitialExpandId(null);
-    router.replace(`/weekly-report/${workspaceId}`);
-  }, [pendingInitialExpandId, reports, workspaceId, router, metricsMap]);
+    clearReportIdParam();
+  }, [pendingInitialExpandId, reports, metricsMap, clearReportIdParam]);
+
+  const shiftMonth = (delta: number) => {
+    const next = new Date(filterYear, filterMonth - 1 + delta, 1);
+    syncFilter(next.getFullYear(), next.getMonth() + 1);
+  };
+
+  const goToPreviousMonth = () => shiftMonth(-1);
+  const goToNextMonth = () => shiftMonth(1);
 
   const handleReportCreated = (report: Report) => {
     setIsModalOpen(false);
     setReports((prev) => [report, ...prev]);
+    const start = new Date(report.start_date);
+    syncFilter(start.getFullYear(), start.getMonth() + 1, { preserveReportId: true });
 
     const shouldNavigate = window.confirm("방금 생성한 레포트를 바로 작성하시겠어요?");
     if (shouldNavigate) {
@@ -354,7 +451,7 @@ export default function WeeklyReportPage() {
                   <div className="flex flex-wrap gap-3">
                     <select
                       value={filterYear}
-                      onChange={(e) => setFilterYear(Number(e.target.value))}
+                      onChange={(e) => syncFilter(Number(e.target.value), filterMonth)}
                       className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100"
                     >
                       {years.map((year) => (
@@ -365,7 +462,7 @@ export default function WeeklyReportPage() {
                     </select>
                     <select
                       value={filterMonth}
-                      onChange={(e) => setFilterMonth(Number(e.target.value))}
+                      onChange={(e) => syncFilter(filterYear, Number(e.target.value))}
                       className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100"
                     >
                       {months.map((month) => (
@@ -383,6 +480,29 @@ export default function WeeklyReportPage() {
                     주간 레포트 생성
                   </button>
                 </div>
+                <div className="flex items-center justify-center gap-3">
+                  <button
+                    onClick={goToPreviousMonth}
+                    className="p-2 border border-zinc-200 dark:border-zinc-700 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+                    aria-label="이전 월"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                    {filterYear}년 {filterMonth}월
+                  </span>
+                  <button
+                    onClick={goToNextMonth}
+                    className="p-2 border border-zinc-200 dark:border-zinc-700 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+                    aria-label="다음 월"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
 
                 {loadingReports ? (
                   <div className="flex items-center justify-center py-16 text-zinc-500 dark:text-zinc-400">
@@ -397,7 +517,8 @@ export default function WeeklyReportPage() {
                     {reports.map((report) => {
                       const isExpanded = expandedReportIds.includes(report.id);
                       const metrics = metricsMap[report.id] ?? [];
-                      const pieSegments = metrics.length ? buildPieSegments(metrics) : [];
+                      const sortedMetrics = [...metrics].sort((a, b) => b.minutes - a.minutes);
+                      const pieSegments = sortedMetrics.length ? buildPieSegments(sortedMetrics) : [];
                       return (
                         <div
                           key={report.id}
@@ -456,7 +577,7 @@ export default function WeeklyReportPage() {
                                               <span className="text-center">시간</span>
                                               <span className="text-center">비중</span>
                                             </div>
-                                            {metrics.map((metric) => {
+                                            {sortedMetrics.map((metric) => {
                                               const segment = pieSegments.find(
                                                 (item) => item.categoryId === metric.category_id
                                               );
@@ -495,7 +616,7 @@ export default function WeeklyReportPage() {
                                           </p>
                                         </div>
                                         <div className="flex items-end gap-3 h-32">
-                                          {metrics.map((metric) => (
+                                          {sortedMetrics.map((metric) => (
                                             <div key={metric.id} className="flex-1 flex flex-col items-center gap-1">
                                               <div className="relative w-full h-24 bg-zinc-100 dark:bg-zinc-800 rounded-lg overflow-hidden">
                                                 <div

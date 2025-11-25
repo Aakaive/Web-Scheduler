@@ -749,6 +749,7 @@ export const getReportMetrics = async (reportId: number) => {
     .from('report_metrics')
     .select('*')
     .eq('report_id', reportId)
+    .order('minutes', { ascending: false })
     .order('category_id', { ascending: true, nullsFirst: true })
 
   if (error) {
