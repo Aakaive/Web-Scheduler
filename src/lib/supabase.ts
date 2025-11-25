@@ -607,3 +607,172 @@ export const updateComment = async (commentId: string, workspaceId: string, expr
 
   return data as Comment
 }
+
+export interface Report {
+  id: number
+  created_at: string
+  workspace_id: string
+  user_id: string
+  start_date: string
+  end_date: string
+  week_number: number
+  kpt_keep: string | null
+  kpt_problem: string | null
+  kpt_try: string | null
+}
+
+const formatDate = (date: Date) => date.toISOString().split('T')[0]
+
+export const getReportsByMonth = async (workspaceId: string, year: number, month: number) => {
+  const startDate = formatDate(new Date(year, month - 1, 1))
+  const endDate = formatDate(new Date(year, month, 0))
+
+  const { data, error } = await supabase
+    .from('reports')
+    .select('*')
+    .eq('workspace_id', workspaceId)
+    .gte('start_date', startDate)
+    .lte('start_date', endDate)
+    .order('start_date', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching reports:', error)
+    throw error
+  }
+
+  return data as Report[]
+}
+
+export const createReport = async (
+  workspaceId: string,
+  userId: string,
+  payload: {
+    start_date: string
+    end_date: string
+    week_number: number
+  }
+) => {
+  const { data, error } = await supabase
+    .from('reports')
+    .insert({
+      workspace_id: workspaceId,
+      user_id: userId,
+      start_date: payload.start_date,
+      end_date: payload.end_date,
+      week_number: payload.week_number,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error creating report:', error)
+    throw error
+  }
+
+  return data as Report
+}
+
+export interface ReportMetric {
+  id: number
+  created_at: string
+  report_id: number
+  category: SodCategory
+  minutes: number
+  rate: number
+}
+
+export interface ReportMetricInput {
+  category: SodCategory
+  minutes: number
+  rate: number
+}
+
+export const getReportMetrics = async (reportId: number) => {
+  const { data, error } = await supabase
+    .from('report_metrics')
+    .select('*')
+    .eq('report_id', reportId)
+    .order('category', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching report metrics:', error)
+    throw error
+  }
+
+  return data as ReportMetric[]
+}
+
+export const replaceReportMetrics = async (reportId: number, metrics: ReportMetricInput[]) => {
+  const { error: deleteError } = await supabase
+    .from('report_metrics')
+    .delete()
+    .eq('report_id', reportId)
+
+  if (deleteError) {
+    console.error('Error cleaning report metrics:', deleteError)
+    throw deleteError
+  }
+
+  if (metrics.length === 0) {
+    return []
+  }
+
+  const { data, error } = await supabase
+    .from('report_metrics')
+    .insert(
+      metrics.map(metric => ({
+        report_id: reportId,
+        category: metric.category,
+        minutes: Math.round(metric.minutes),
+        rate: Number(metric.rate.toFixed(2)),
+      }))
+    )
+    .select()
+
+  if (error) {
+    console.error('Error inserting report metrics:', error)
+    throw error
+  }
+
+  return data as ReportMetric[]
+}
+
+export const getReportById = async (reportId: number, workspaceId: string, userId: string) => {
+  const { data, error } = await supabase
+    .from('reports')
+    .select('*')
+    .eq('id', reportId)
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (error) {
+    console.error('Error fetching report:', error)
+    throw error
+  }
+
+  return data as Report | null
+}
+
+export const updateReport = async (
+  reportId: number,
+  workspaceId: string,
+  userId: string,
+  updates: Partial<Pick<Report, 'kpt_keep' | 'kpt_problem' | 'kpt_try'>>
+) => {
+  const { data, error } = await supabase
+    .from('reports')
+    .update(updates)
+    .eq('id', reportId)
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', userId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error updating report:', error)
+    throw error
+  }
+
+  return data as Report
+}
