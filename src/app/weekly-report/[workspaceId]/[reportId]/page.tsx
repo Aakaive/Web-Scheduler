@@ -41,7 +41,7 @@ export default function WeeklyReportDetailPage() {
   const [metrics, setMetrics] = useState<ReportMetric[]>([]);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [previousWeekMetrics, setPreviousWeekMetrics] = useState<ReportMetric[]>([]);
-  const [previousMonthMetrics, setPreviousMonthMetrics] = useState<ReportMetric[]>([]);
+  const [previousMonthMetrics, setPreviousMonthMetrics] = useState<Array<{ category_id: number | null; minutes: number; rate: number }>>([]);
   const [previousMonthWeekCount, setPreviousMonthWeekCount] = useState(1);
   const [comparisonLoading, setComparisonLoading] = useState(false);
 
