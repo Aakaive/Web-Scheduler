@@ -146,6 +146,7 @@ export default function RoutineManagementModal({
   const [editExpression, setEditExpression] = useState<string>('')
   const [editCategoryId, setEditCategoryId] = useState<number | null>(null)
   const [editSelectedDays, setEditSelectedDays] = useState<Set<number>>(new Set())
+  const [includePastSelections, setIncludePastSelections] = useState<Record<string, boolean>>({})
 
   const weekDays = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -354,17 +355,20 @@ export default function RoutineManagementModal({
     }
   }
 
-  const handleApply = async (routine: Routine) => {
+  const handleApply = async (routine: Routine, includePastDates: boolean) => {
     const dayNames = routine.repeat_days.map(d => weekDays[d]).join(', ')
-    if (!confirm(`"${routine.title}" 루틴을 ${year}년 ${month + 1}월에 적용하시겠습니까?\n\n반복 요일: ${dayNames}\n\n※ 오늘부터 월말까지만 적용됩니다. (과거 날짜는 제외)`)) {
+    const applyRangeNote = includePastDates
+      ? '이번 달 1일부터 월말까지 모든 날짜에 적용됩니다.'
+      : '오늘부터 월말까지만 적용됩니다. (과거 날짜는 제외)'
+    if (!confirm(`"${routine.title}" 루틴을 ${year}년 ${month + 1}월에 적용하시겠습니까?\n\n반복 요일: ${dayNames}\n\n※ ${applyRangeNote}`)) {
       return
     }
 
     try {
       setSaving(true)
       setError(null)
-      const count = await applyRoutineToMonth(routine, year, month, workspaceId, userId)
-      alert(`${count}개의 SoD가 생성되었습니다. (오늘부터 월말까지)`)
+      const count = await applyRoutineToMonth(routine, year, month, workspaceId, userId, includePastDates)
+      alert(`${count}개의 SoD가 생성되었습니다. (${includePastDates ? '이번 달 전체' : '오늘부터 월말까지'})`)
       if (onRoutineApplied) {
         onRoutineApplied()
       }
@@ -375,16 +379,19 @@ export default function RoutineManagementModal({
     }
   }
 
-  const handleRemove = async (routine: Routine) => {
-    if (!confirm(`"${routine.title}" 루틴을 ${year}년 ${month + 1}월에서 해제하시겠습니까?\n\n내일 이후의 루틴만 삭제됩니다. (오늘과 과거 날짜는 유지됩니다)`)) {
+  const handleRemove = async (routine: Routine, includePastDates: boolean) => {
+    const removeRangeNote = includePastDates
+      ? '이번 달 1일부터 월말까지 모든 날짜의 루틴이 삭제됩니다.'
+      : '내일 이후의 루틴만 삭제됩니다. (오늘과 과거 날짜는 유지됩니다)'
+    if (!confirm(`"${routine.title}" 루틴을 ${year}년 ${month + 1}월에서 해제하시겠습니까?\n\n${removeRangeNote}`)) {
       return
     }
 
     try {
       setSaving(true)
       setError(null)
-      await removeRoutineFromMonth(routine.id, year, month, workspaceId, userId)
-      alert('루틴이 해제되었습니다. (내일 이후 날짜만 삭제)')
+      await removeRoutineFromMonth(routine.id, year, month, workspaceId, userId, includePastDates)
+      alert(`루틴이 해제되었습니다. (${includePastDates ? '이번 달 전체 기간' : '내일 이후 날짜만 삭제'})`)
       if (onRoutineApplied) {
         onRoutineApplied()
       }
@@ -795,21 +802,37 @@ export default function RoutineManagementModal({
                         </div>
                       </div>
 
-                      <div className="flex gap-2 pt-3 border-t border-zinc-200 dark:border-zinc-700">
+                      <div className="pt-3 border-t border-zinc-200 dark:border-zinc-700 flex flex-col gap-2">
+                        <label className="inline-flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600 text-blue-600 focus:ring-blue-500"
+                            checked={includePastSelections[routine.id] ?? false}
+                            onChange={() =>
+                              setIncludePastSelections((prev) => ({
+                                ...prev,
+                                [routine.id]: !(prev[routine.id] ?? false),
+                              }))
+                            }
+                          />
+                          <span>지난 날짜 포함 (이달 전체 적용/해제)</span>
+                        </label>
+                        <div className="flex gap-2">
                         <button
-                          onClick={() => handleApply(routine)}
+                          onClick={() => handleApply(routine, includePastSelections[routine.id] ?? false)}
                           disabled={saving}
                           className="flex-1 px-3 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           적용
                         </button>
                         <button
-                          onClick={() => handleRemove(routine)}
+                          onClick={() => handleRemove(routine, includePastSelections[routine.id] ?? false)}
                           disabled={saving}
                           className="flex-1 px-3 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           해제
                         </button>
+                        </div>
                       </div>
                     </div>
                   )}

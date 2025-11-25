@@ -523,13 +523,16 @@ export const applyRoutineToMonth = async (
   year: number,
   month: number,
   workspaceId: string,
-  userId: string
+  userId: string,
+  includePastDates = false
 ) => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   
-  const firstDay = new Date(year, month, 1)
+  const monthStart = new Date(year, month, 1)
+  monthStart.setHours(0, 0, 0, 0)
   const lastDay = new Date(year, month + 1, 0)
+  lastDay.setHours(0, 0, 0, 0)
   
   const sodsToCreate: Omit<Sod, 'id' | 'created_at'>[] = []
   
@@ -537,7 +540,11 @@ export const applyRoutineToMonth = async (
     const date = new Date(year, month, day)
     date.setHours(0, 0, 0, 0)
     
-    if (date < today) {
+    if (!includePastDates && date < today) {
+      continue
+    }
+    
+    if (date < monthStart || date > lastDay) {
       continue
     }
     
@@ -545,7 +552,6 @@ export const applyRoutineToMonth = async (
     
     if (routine.repeat_days.includes(dayOfWeek)) {
       const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-      
       const summaryText = routine.summary ? `(루틴) ${routine.summary}` : '(루틴)'
       
       sodsToCreate.push({
@@ -582,17 +588,30 @@ export const removeRoutineFromMonth = async (
   year: number,
   month: number,
   workspaceId: string,
-  userId: string
+  userId: string,
+  includePastDates = false
 ) => {
   const today = new Date()
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-  
+  today.setHours(0, 0, 0, 0)
   const tomorrow = new Date(today)
   tomorrow.setDate(tomorrow.getDate() + 1)
-  const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`
   
-  const lastDay = new Date(year, month + 1, 0).getDate()
-  const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+  const monthStart = new Date(year, month, 1)
+  monthStart.setHours(0, 0, 0, 0)
+  const monthEnd = new Date(year, month + 1, 0)
+  monthEnd.setHours(0, 0, 0, 0)
+  
+  let startDate = includePastDates ? monthStart : tomorrow
+  if (startDate < monthStart) {
+    startDate = monthStart
+  }
+  
+  if (startDate > monthEnd) {
+    return
+  }
+  
+  const startDateStr = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`
+  const endDateStr = `${monthEnd.getFullYear()}-${String(monthEnd.getMonth() + 1).padStart(2, '0')}-${String(monthEnd.getDate()).padStart(2, '0')}`
   
   const { error } = await supabase
     .from('sods')
@@ -600,8 +619,8 @@ export const removeRoutineFromMonth = async (
     .eq('workspace_id', workspaceId)
     .eq('user_id', userId)
     .eq('routine_id', routineId)
-    .gte('date', tomorrowStr)
-    .lte('date', endDate)
+    .gte('date', startDateStr)
+    .lte('date', endDateStr)
   
   if (error) {
     console.error('Error removing routine from month:', error)
