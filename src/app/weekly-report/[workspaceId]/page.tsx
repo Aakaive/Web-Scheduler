@@ -66,6 +66,7 @@ export default function WeeklyReportPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [loadingReports, setLoadingReports] = useState(true);
   const [reports, setReports] = useState<Report[]>([]);
+  const [workspace, setWorkspace] = useState<{ id: string; title: string } | null>(null);
   const [expandedReportIds, setExpandedReportIds] = useState<number[]>([]);
   const [metricsMap, setMetricsMap] = useState<Record<number, ReportMetric[]>>({});
   const [metricsLoadingId, setMetricsLoadingId] = useState<number | null>(null);
@@ -104,6 +105,31 @@ export default function WeeklyReportPage() {
     };
     initUser();
   }, []);
+
+  useEffect(() => {
+    if (!workspaceId || !userId) return;
+    fetchWorkspace();
+  }, [workspaceId, userId]);
+
+  const fetchWorkspace = async () => {
+    try {
+      const { data, error: err } = await supabase
+        .from('workspaces')
+        .select('id, title')
+        .eq('id', workspaceId)
+        .eq('user_id', userId)
+        .single();
+
+      if (err) {
+        console.error('Error fetching workspace:', err);
+        return;
+      }
+
+      setWorkspace(data as { id: string; title: string });
+    } catch (e) {
+      console.error('Error fetching workspace:', e);
+    }
+  };
 
   useEffect(() => {
     const paramYear = searchParams?.get("year");
@@ -530,7 +556,7 @@ export default function WeeklyReportPage() {
                   주간 레포트
                 </h1>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 whitespace-nowrap overflow-hidden text-ellipsis">
-                  워크스페이스 ID: {workspaceId}
+                  {workspace ? `${workspace.title} - 주간 인사이트 & KPT 회고` : '워크스페이스를 불러오는 중...'}
                 </p>
               </div>
               <Link

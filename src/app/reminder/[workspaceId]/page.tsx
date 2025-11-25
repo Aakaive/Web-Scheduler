@@ -19,6 +19,7 @@ export default function ReminderPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [showEndedReminders, setShowEndedReminders] = useState(false)
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false)
+  const [workspace, setWorkspace] = useState<{ id: string; title: string } | null>(null)
 
   useEffect(() => {
     const init = async () => {
@@ -31,8 +32,29 @@ export default function ReminderPage() {
 
   useEffect(() => {
     if (!workspaceId || !userId) return
+    fetchWorkspace()
     fetchReminders()
   }, [workspaceId, userId])
+
+  const fetchWorkspace = async () => {
+    try {
+      const { data, error: err } = await supabase
+        .from('workspaces')
+        .select('id, title')
+        .eq('id', workspaceId)
+        .eq('user_id', userId)
+        .single()
+
+      if (err) {
+        console.error('Error fetching workspace:', err)
+        return
+      }
+
+      setWorkspace(data as { id: string; title: string })
+    } catch (e) {
+      console.error('Error fetching workspace:', e)
+    }
+  }
 
   const fetchReminders = async () => {
     try {
@@ -98,7 +120,7 @@ export default function ReminderPage() {
                   일정 리마인더
                 </h1>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 whitespace-nowrap overflow-hidden text-ellipsis">
-                  워크스페이스 ID: {workspaceId}
+                  {workspace ? `${workspace.title} - 알림 및 리마인더 설정` : '워크스페이스를 불러오는 중...'}
                 </p>
               </div>
               <Link
