@@ -1091,9 +1091,6 @@ export default function WeeklyReportDetailPage() {
                         Keep · Problem · Try 항목을 구분해 주간 인사이트를 정리하세요.
                       </p>
                     </div>
-                    <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
-                      작성 후 저장 버튼을 눌러야 기록이 반영됩니다.
-                    </span>
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-3">
