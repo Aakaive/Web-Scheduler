@@ -8,7 +8,8 @@ import {
   deleteRoutine,
   applyRoutineToMonth,
   removeRoutineFromMonth,
-  Routine 
+  Routine,
+  SodCategory
 } from '@/lib/supabase'
 
 interface RoutineManagementModalProps {
@@ -30,6 +31,19 @@ export default function RoutineManagementModal({
   month,
   onRoutineApplied,
 }: RoutineManagementModalProps) {
+  const CATEGORY_OPTIONS: { value: SodCategory; label: string }[] = [
+    { value: 'life', label: '생활' },
+    { value: 'work', label: '업무' },
+    { value: 'learning', label: '학습' },
+    { value: 'etc', label: '기타' },
+  ]
+  const DEFAULT_CATEGORY: SodCategory = 'etc'
+  const CATEGORY_LABELS = CATEGORY_OPTIONS.reduce<Record<SodCategory, string>>((acc, option) => {
+    acc[option.value] = option.label
+    return acc
+  }, {} as Record<SodCategory, string>)
+  const getCategoryLabel = (value?: SodCategory | null) => CATEGORY_LABELS[value ?? DEFAULT_CATEGORY]
+
   const to12Hour = (hhmm: string | null) => {
     if (!hhmm) return { hour: 12, minute: 0, ampm: 'AM' as const }
     const [hh, mm] = hhmm.split(':').map(Number)
@@ -108,6 +122,7 @@ export default function RoutineManagementModal({
   const [endAmPm, setEndAmPm] = useState<'AM' | 'PM'>('PM')
   const [summary, setSummary] = useState<string>('')
   const [expression, setExpression] = useState<string>('')
+  const [category, setCategory] = useState<SodCategory>(DEFAULT_CATEGORY)
   const [selectedDays, setSelectedDays] = useState<Set<number>>(new Set())
   const [saving, setSaving] = useState(false)
 
@@ -121,6 +136,7 @@ export default function RoutineManagementModal({
   const [editEndAmPm, setEditEndAmPm] = useState<'AM' | 'PM'>('PM')
   const [editSummary, setEditSummary] = useState<string>('')
   const [editExpression, setEditExpression] = useState<string>('')
+  const [editCategory, setEditCategory] = useState<SodCategory>(DEFAULT_CATEGORY)
   const [editSelectedDays, setEditSelectedDays] = useState<Set<number>>(new Set())
 
   const weekDays = ['일', '월', '화', '수', '목', '금', '토']
@@ -176,6 +192,7 @@ export default function RoutineManagementModal({
     setEndAmPm('PM')
     setSummary('')
     setExpression('')
+    setCategory(DEFAULT_CATEGORY)
     setSelectedDays(new Set())
   }
 
@@ -190,6 +207,7 @@ export default function RoutineManagementModal({
     setEndAmPm('PM')
     setSummary('')
     setExpression('')
+    setCategory(DEFAULT_CATEGORY)
     setSelectedDays(new Set())
   }
 
@@ -219,6 +237,7 @@ export default function RoutineManagementModal({
         summary: summary || null,
         expression: expression || null,
         repeat_days: Array.from(selectedDays).sort((a, b) => a - b),
+        category
       })
 
       setShowForm(false)
@@ -244,6 +263,7 @@ export default function RoutineManagementModal({
     setEditEndAmPm(end12.ampm)
     setEditSummary(routine.summary ?? '')
     setEditExpression(routine.expression ?? '')
+    setEditCategory(routine.category ?? DEFAULT_CATEGORY)
     setEditSelectedDays(new Set(routine.repeat_days))
   }
 
@@ -258,6 +278,7 @@ export default function RoutineManagementModal({
     setEditEndAmPm('PM')
     setEditSummary('')
     setEditExpression('')
+    setEditCategory(DEFAULT_CATEGORY)
     setEditSelectedDays(new Set())
   }
 
@@ -283,6 +304,7 @@ export default function RoutineManagementModal({
         summary: editSummary || null,
         expression: editExpression || null,
         repeat_days: Array.from(editSelectedDays).sort((a, b) => a - b),
+        category: editCategory
       })
       cancelEdit()
       await fetchRoutines()
@@ -498,6 +520,23 @@ export default function RoutineManagementModal({
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-2">
+                  활동 속성
+                </label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value as SodCategory)}
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                >
+                  {CATEGORY_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="flex gap-2 justify-end">
                 <button
                   onClick={handleFormCancel}
@@ -611,6 +650,20 @@ export default function RoutineManagementModal({
                           className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 resize-none"
                         />
                       </div>
+                      <div>
+                        <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">활동 속성</label>
+                        <select
+                          value={editCategory}
+                          onChange={(e) => setEditCategory(e.target.value as SodCategory)}
+                          className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                        >
+                          {CATEGORY_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
                       <div className="flex gap-2 justify-end">
                         <button
@@ -636,8 +689,13 @@ export default function RoutineManagementModal({
                           <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-1">
                             {routine.title}
                           </h3>
-                          <div className="text-sm text-zinc-600 dark:text-zinc-400 mb-2">
-                            {formatTime(routine.start_at)} ~ {formatTime(routine.end_at)}
+                          <div className="flex items-center gap-3 text-sm text-zinc-600 dark:text-zinc-400 mb-2">
+                            <span>
+                              {formatTime(routine.start_at)} ~ {formatTime(routine.end_at)}
+                            </span>
+                            <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700">
+                              {getCategoryLabel(routine.category)}
+                            </span>
                           </div>
                           <div className="flex gap-1 mb-2">
                             {routine.repeat_days.map((dayIdx) => (

@@ -124,6 +124,7 @@ export interface Routine {
   end_at: string | null
   repeat_days: number[]
   is_active: boolean
+  category: SodCategory
 }
 
 export const getSodsByDate = async (workspaceId: string, userId: string, date: string) => {
@@ -412,7 +413,7 @@ export const getRoutinesByWorkspace = async (workspaceId: string, userId: string
 export const createRoutine = async (routine: Omit<Routine, 'id' | 'created_at' | 'is_active'>) => {
   const { data, error } = await supabase
     .from('routines')
-    .insert({ ...routine, is_active: true })
+    .insert({ ...routine, category: routine.category ?? 'etc', is_active: true })
     .select()
     .single()
 
@@ -500,7 +501,7 @@ export const applyRoutineToMonth = async (
         expression: routine.expression,
         routine_id: routine.id,
         check: false,
-        category: 'etc'
+        category: routine.category ?? 'etc'
       })
     }
   }
