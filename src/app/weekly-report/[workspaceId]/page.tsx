@@ -17,6 +17,7 @@ import {
   getPreviousMonthReportsWithWeekCount,
   getAggregatedMetricsFromReports,
   getCommentsByDateRange,
+  deleteReport,
 } from "@/lib/supabase";
 import { useWorkspaceCategories } from "@/hooks/useWorkspaceCategories";
 import { getCategoryColor } from "@/lib/categoryColors";
@@ -74,6 +75,7 @@ export default function WeeklyReportPage() {
   const [comparisonLoadingMap, setComparisonLoadingMap] = useState<Record<number, boolean>>({});
   const [commentsMap, setCommentsMap] = useState<Record<number, Comment[]>>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deletingReportId, setDeletingReportId] = useState<number | null>(null);
   const [pendingInitialExpandId, setPendingInitialExpandId] = useState<number | null>(() => {
     const param = searchParams?.get("reportId");
     const parsed = param ? Number(param) : null;
@@ -417,6 +419,56 @@ export default function WeeklyReportPage() {
     }
   };
 
+  const handleDeleteReport = async (report: Report) => {
+    if (!workspaceId) return;
+    const confirmation = window.confirm(
+      `"${formatReportLabel(report)}" 레포트를 삭제할까요?\n\n삭제 후에는 복구할 수 없습니다.`
+    );
+    if (!confirmation) return;
+
+    try {
+      setDeletingReportId(report.id);
+      await deleteReport(report.id, workspaceId);
+      setReports((prev) => prev.filter((item) => item.id !== report.id));
+      setExpandedReportIds((prev) => prev.filter((id) => id !== report.id));
+
+      setMetricsMap((prev) => {
+        const { [report.id]: _removed, ...rest } = prev;
+        return rest;
+      });
+
+      setCommentsMap((prev) => {
+        const { [report.id]: _removed, ...rest } = prev;
+        return rest;
+      });
+
+      setPreviousWeekMetricsMap((prev) => {
+        const { [report.id]: _removed, ...rest } = prev;
+        return rest;
+      });
+
+      setPreviousMonthMetricsMap((prev) => {
+        const { [report.id]: _removed, ...rest } = prev;
+        return rest;
+      });
+
+      setPreviousMonthWeekCountMap((prev) => {
+        const { [report.id]: _removed, ...rest } = prev;
+        return rest;
+      });
+
+      setComparisonLoadingMap((prev) => {
+        const { [report.id]: _removed, ...rest } = prev;
+        return rest;
+      });
+    } catch (error) {
+      console.error("Failed to delete report:", error);
+      alert("레포트를 삭제하지 못했습니다. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setDeletingReportId(null);
+    }
+  };
+
   const buildPieSegments = (metrics: ReportMetric[]) => {
     const totalMinutes = metrics.reduce((sum, metric) => sum + metric.minutes, 0);
     let offset = 0;
@@ -716,6 +768,18 @@ export default function WeeklyReportPage() {
                           </button>
                           {isExpanded && (
                             <div className="border-t border-zinc-100 dark:border-zinc-800 px-4 py-4 space-y-4">
+                              <div className="flex justify-end">
+                                <button
+                                  onClick={() => handleDeleteReport(report)}
+                                  disabled={deletingReportId === report.id}
+                                  className="inline-flex items-center gap-1 rounded-md border border-red-200 dark:border-red-900 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+                                >
+                                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                  {deletingReportId === report.id ? "삭제 중..." : "레포트 삭제"}
+                                </button>
+                              </div>
                               {metricsLoadingId === report.id ? (
                                 <div className="py-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
                                   주간 분석 정보를 불러오는 중입니다...
@@ -1065,23 +1129,70 @@ export default function WeeklyReportPage() {
                                 </>
                               )}
 
-                              <div>
-                                <h4 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">Keep</h4>
-                                <p className="text-sm text-zinc-900 dark:text-zinc-100 whitespace-pre-wrap">
-                                  {report.kpt_keep || "작성된 내용이 없습니다."}
-                                </p>
-                              </div>
-                              <div>
-                                <h4 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">Problem</h4>
-                                <p className="text-sm text-zinc-900 dark:text-zinc-100 whitespace-pre-wrap">
-                                  {report.kpt_problem || "작성된 내용이 없습니다."}
-                                </p>
-                              </div>
-                              <div>
-                                <h4 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">Try</h4>
-                                <p className="text-sm text-zinc-900 dark:text-zinc-100 whitespace-pre-wrap">
-                                  {report.kpt_try || "작성된 내용이 없습니다."}
-                                </p>
+                              <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/30 p-4 space-y-4">
+                                <div className="flex items-center justify-between gap-3 flex-wrap">
+                                  <div>
+                                    <h4 className="text-sm font-semibold text-zinc-700 dark:text-zinc-100">
+                                      KPT 회고
+                                    </h4>
+                                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                                      요약된 Keep · Problem · Try 기록
+                                    </p>
+                                  </div>
+                                  <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+                                    상세 페이지에서 편집 가능
+                                  </span>
+                                </div>
+
+                                <div className="grid gap-3 md:grid-cols-3">
+                                  <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/40 p-3 space-y-2 shadow-sm">
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="font-semibold text-emerald-600 dark:text-emerald-300">Keep</span>
+                                      <span className="text-zinc-400 dark:text-zinc-500">유지</span>
+                                    </div>
+                                    <p
+                                      className={`text-sm whitespace-pre-wrap min-h-[72px] ${
+                                        report.kpt_keep
+                                          ? "text-zinc-900 dark:text-zinc-100"
+                                          : "text-zinc-400 dark:text-zinc-500"
+                                      }`}
+                                    >
+                                      {report.kpt_keep || "작성된 내용이 없습니다."}
+                                    </p>
+                                  </div>
+
+                                  <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/40 p-3 space-y-2 shadow-sm">
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="font-semibold text-red-500 dark:text-red-300">Problem</span>
+                                      <span className="text-zinc-400 dark:text-zinc-500">문제</span>
+                                    </div>
+                                    <p
+                                      className={`text-sm whitespace-pre-wrap min-h-[72px] ${
+                                        report.kpt_problem
+                                          ? "text-zinc-900 dark:text-zinc-100"
+                                          : "text-zinc-400 dark:text-zinc-500"
+                                      }`}
+                                    >
+                                      {report.kpt_problem || "작성된 내용이 없습니다."}
+                                    </p>
+                                  </div>
+
+                                  <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/40 p-3 space-y-2 shadow-sm">
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="font-semibold text-sky-600 dark:text-sky-300">Try</span>
+                                      <span className="text-zinc-400 dark:text-zinc-500">시도</span>
+                                    </div>
+                                    <p
+                                      className={`text-sm whitespace-pre-wrap min-h-[72px] ${
+                                        report.kpt_try
+                                          ? "text-zinc-900 dark:text-zinc-100"
+                                          : "text-zinc-400 dark:text-zinc-500"
+                                      }`}
+                                    >
+                                      {report.kpt_try || "작성된 내용이 없습니다."}
+                                    </p>
+                                  </div>
+                                </div>
                               </div>
 
                               {/* 회고문 섹션 */}

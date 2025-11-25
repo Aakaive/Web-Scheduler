@@ -1064,36 +1064,73 @@ export default function WeeklyReportDetailPage() {
                   </div>
                 )}
 
-                <div className="space-y-4">
-                  <label className="block">
-                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Keep</span>
-                    <textarea
-                      value={formState.kpt_keep}
-                      onChange={(e) => handleInputChange("kpt_keep", e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 min-h-[120px] text-sm text-zinc-900 dark:text-zinc-100"
-                      placeholder="이번 주에 유지하고 싶은 성과를 기록해주세요."
-                    />
-                  </label>
+                <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/30 p-5 space-y-5">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div>
+                      <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-100">
+                        KPT 회고
+                      </h3>
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                        Keep · Problem · Try 항목을 구분해 주간 인사이트를 정리하세요.
+                      </p>
+                    </div>
+                    <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+                      작성 후 저장 버튼을 눌러야 기록이 반영됩니다.
+                    </span>
+                  </div>
 
-                  <label className="block">
-                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Problem</span>
-                    <textarea
-                      value={formState.kpt_problem}
-                      onChange={(e) => handleInputChange("kpt_problem", e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 min-h-[120px] text-sm text-zinc-900 dark:text-zinc-100"
-                      placeholder="이번 주에 발생한 문제나 아쉬운 점을 기록해주세요."
-                    />
-                  </label>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <label className="flex flex-col gap-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/40 p-4 shadow-sm">
+                      <div>
+                        <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-300">
+                          Keep
+                        </span>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                          계속 유지하고 싶은 성과
+                        </p>
+                      </div>
+                      <textarea
+                        value={formState.kpt_keep}
+                        onChange={(e) => handleInputChange("kpt_keep", e.target.value)}
+                        className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950/40 px-3 py-2 min-h-[120px] text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-emerald-200 dark:focus:ring-emerald-500/40"
+                        placeholder="이번 주에 유지하고 싶은 성과를 기록해주세요."
+                      />
+                    </label>
 
-                  <label className="block">
-                    <span className="text-sm font-medium text-zinc-700 dark:text-zinc-200">Try</span>
-                    <textarea
-                      value={formState.kpt_try}
-                      onChange={(e) => handleInputChange("kpt_try", e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 min-h-[120px] text-sm text-zinc-900 dark:text-zinc-100"
-                      placeholder="다음 주에 시도하고 싶은 아이디어를 기록해주세요."
-                    />
-                  </label>
+                    <label className="flex flex-col gap-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/40 p-4 shadow-sm">
+                      <div>
+                        <span className="text-sm font-semibold text-red-500 dark:text-red-300">
+                          Problem
+                        </span>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                          개선이 필요한 문제나 아쉬움
+                        </p>
+                      </div>
+                      <textarea
+                        value={formState.kpt_problem}
+                        onChange={(e) => handleInputChange("kpt_problem", e.target.value)}
+                        className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950/40 px-3 py-2 min-h-[120px] text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-red-200 dark:focus:ring-red-500/40"
+                        placeholder="이번 주에 발생한 문제나 아쉬운 점을 기록해주세요."
+                      />
+                    </label>
+
+                    <label className="flex flex-col gap-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900/40 p-4 shadow-sm">
+                      <div>
+                        <span className="text-sm font-semibold text-sky-600 dark:text-sky-300">
+                          Try
+                        </span>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                          다음 주에 시도할 액션 아이템
+                        </p>
+                      </div>
+                      <textarea
+                        value={formState.kpt_try}
+                        onChange={(e) => handleInputChange("kpt_try", e.target.value)}
+                        className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950/40 px-3 py-2 min-h-[120px] text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-sky-200 dark:focus:ring-sky-500/40"
+                        placeholder="다음 주에 시도하고 싶은 아이디어를 기록해주세요."
+                      />
+                    </label>
+                  </div>
                 </div>
 
                 {/* 회고문 섹션 */}

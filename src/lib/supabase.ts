@@ -718,7 +718,12 @@ export interface Report {
   kpt_try: string | null
 }
 
-const formatDate = (date: Date) => date.toISOString().split('T')[0]
+const formatDate = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
 export const getReportsByMonth = async (workspaceId: string, year: number, month: number) => {
   const startDate = formatDate(new Date(year, month - 1, 1))
@@ -767,6 +772,29 @@ export const createReport = async (
   }
 
   return data as Report
+}
+
+export const deleteReport = async (reportId: number, workspaceId: string) => {
+  const { error: metricsError } = await supabase
+    .from('report_metrics')
+    .delete()
+    .eq('report_id', reportId)
+
+  if (metricsError) {
+    console.error('Error deleting report metrics:', metricsError)
+    throw metricsError
+  }
+
+  const { error } = await supabase
+    .from('reports')
+    .delete()
+    .eq('id', reportId)
+    .eq('workspace_id', workspaceId)
+
+  if (error) {
+    console.error('Error deleting report:', error)
+    throw error
+  }
 }
 
 export interface ReportMetric {
