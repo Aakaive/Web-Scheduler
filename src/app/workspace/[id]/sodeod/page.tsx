@@ -7,6 +7,7 @@ import Link from 'next/link'
 import SodeodCalendar from '@/components/SodeodCalendar'
 import SodeodModal from '@/components/SodeodModal'
 import RoutineManagementModal from '@/components/RoutineManagementModal'
+import CategoryManagementModal from '@/components/CategoryManagementModal'
 
 interface Workspace {
   id: string
@@ -27,9 +28,11 @@ export default function SodeodPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isRoutineModalOpen, setIsRoutineModalOpen] = useState(false)
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth())
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false)
+  const [categoryRefreshKey, setCategoryRefreshKey] = useState(0)
 
   useEffect(() => {
     const init = async () => {
@@ -89,6 +92,18 @@ export default function SodeodPage() {
 
   const handleRoutineModalClose = () => {
     setIsRoutineModalOpen(false)
+  }
+
+  const handleCategoryModalOpen = () => {
+    setIsCategoryModalOpen(true)
+  }
+
+  const handleCategoryModalClose = () => {
+    setIsCategoryModalOpen(false)
+  }
+
+  const handleCategoriesUpdated = () => {
+    setCategoryRefreshKey((prev) => prev + 1)
   }
 
   const handleMonthChange = (year: number, month: number) => {
@@ -290,6 +305,7 @@ export default function SodeodPage() {
                 userId={userId}
                 onMonthChange={handleMonthChange}
                 onRoutineModalOpen={handleRoutineModalOpen}
+                onCategoryModalOpen={handleCategoryModalOpen}
               />
             )}
               </div>
@@ -305,6 +321,7 @@ export default function SodeodPage() {
           date={selectedDate}
           workspaceId={workspaceId}
           userId={userId}
+          categoryRefreshKey={categoryRefreshKey}
         />
       )}
 
@@ -317,6 +334,18 @@ export default function SodeodPage() {
           year={currentYear}
           month={currentMonth}
           onRoutineApplied={handleRoutineApplied}
+          categoryRefreshKey={categoryRefreshKey}
+        />
+      )}
+
+      {isCategoryModalOpen && (
+        <CategoryManagementModal
+          isOpen={isCategoryModalOpen}
+          onClose={handleCategoryModalClose}
+          workspaceId={workspaceId}
+          onCategoriesUpdated={() => {
+            handleCategoriesUpdated()
+          }}
         />
       )}
     </div>

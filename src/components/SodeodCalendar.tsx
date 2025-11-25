@@ -9,11 +9,12 @@ interface SodeodCalendarProps {
   userId: string
   onMonthChange?: (year: number, month: number) => void
   onRoutineModalOpen?: () => void
+  onCategoryModalOpen?: () => void
 }
 
 type DayStats = { total: number; checked: number }
 
-export default function SodeodCalendar({ onDateSelect, workspaceId, userId, onMonthChange, onRoutineModalOpen }: SodeodCalendarProps) {
+export default function SodeodCalendar({ onDateSelect, workspaceId, userId, onMonthChange, onRoutineModalOpen, onCategoryModalOpen }: SodeodCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [statsByDate, setStatsByDate] = useState<Record<string, DayStats>>({})
   const [loadingStats, setLoadingStats] = useState(false)
@@ -158,14 +159,24 @@ export default function SodeodCalendar({ onDateSelect, workspaceId, userId, onMo
             </button>
           </div>
           
-          {onRoutineModalOpen && (
-            <button
-              onClick={onRoutineModalOpen}
-              className="px-3 py-2 text-sm font-semibold bg-sky-600 hover:bg-sky-700 text-white rounded-md transition-colors"
-            >
-              루틴 관리
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {onCategoryModalOpen && (
+              <button
+                onClick={onCategoryModalOpen}
+                className="px-3 py-2 text-sm font-semibold border border-blue-200 dark:border-blue-500 text-blue-600 dark:text-blue-200 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+              >
+                속성 관리
+              </button>
+            )}
+            {onRoutineModalOpen && (
+              <button
+                onClick={onRoutineModalOpen}
+                className="px-3 py-2 text-sm font-semibold bg-sky-600 hover:bg-sky-700 text-white rounded-md transition-colors"
+              >
+                루틴 관리
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center justify-center gap-2">

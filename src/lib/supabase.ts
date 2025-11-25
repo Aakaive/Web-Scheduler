@@ -95,7 +95,64 @@ export const deleteReminder = async (reminderId: string, userId: string) => {
   }
 }
 
-export type SodCategory = 'life' | 'work' | 'learning' | 'etc'
+export interface Category {
+  id: number
+  created_at: string
+  workspace_id: string
+  summary: string
+}
+
+export type CategoryId = Category['id']
+
+export const getCategoriesByWorkspace = async (workspaceId: string) => {
+  const { data, error } = await supabase
+    .from('categories')
+    .select('*')
+    .eq('workspace_id', workspaceId)
+    .order('summary', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching categories:', error)
+    throw error
+  }
+
+  return data as Category[]
+}
+
+export const createCategory = async (workspaceId: string, summary: string) => {
+  const { data, error } = await supabase
+    .from('categories')
+    .insert({
+      workspace_id: workspaceId,
+      summary,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error creating category:', error)
+    throw error
+  }
+
+  return data as Category
+}
+
+export const updateCategory = async (categoryId: number, workspaceId: string, summary: string) => {
+  const { data, error } = await supabase
+    .from('categories')
+    .update({ summary })
+    .eq('id', categoryId)
+    .eq('workspace_id', workspaceId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error updating category:', error)
+    throw error
+  }
+
+  return data as Category
+}
 
 export interface Sod {
   id: string
@@ -109,7 +166,7 @@ export interface Sod {
   expression: string | null
   check: boolean
   routine_id: string | null
-  category: SodCategory
+  category_id: CategoryId | null
 }
 
 export interface Routine {
@@ -124,7 +181,7 @@ export interface Routine {
   end_at: string | null
   repeat_days: number[]
   is_active: boolean
-  category: SodCategory
+  category_id: CategoryId | null
 }
 
 export const getSodsByDate = async (workspaceId: string, userId: string, date: string) => {
@@ -147,7 +204,7 @@ export const getSodsByDate = async (workspaceId: string, userId: string, date: s
 export const createSod = async (sod: Omit<Sod, 'id' | 'created_at' | 'check'>) => {
   const { data, error } = await supabase
     .from('sods')
-    .insert({ ...sod, category: sod.category ?? 'etc', check: false })
+    .insert({ ...sod, check: false })
     .select()
     .single()
 
@@ -333,7 +390,7 @@ export const createSodFromTodo = async (
   date: string,
   startAt: string,
   endAt: string | null,
-  category: SodCategory = 'etc'
+  categoryId: CategoryId | null = null
 ) => {
   const { data: todo, error: todoError } = await supabase
     .from('todos')
@@ -356,7 +413,7 @@ export const createSodFromTodo = async (
     summary: todo.summary,
     expression: todo.expression,
     routine_id: null,
-    category
+    category_id: categoryId ?? null
   })
 
   await updateTodo(todoId, userId, { 
@@ -413,7 +470,7 @@ export const getRoutinesByWorkspace = async (workspaceId: string, userId: string
 export const createRoutine = async (routine: Omit<Routine, 'id' | 'created_at' | 'is_active'>) => {
   const { data, error } = await supabase
     .from('routines')
-    .insert({ ...routine, category: routine.category ?? 'etc', is_active: true })
+    .insert({ ...routine, is_active: true })
     .select()
     .single()
 
@@ -501,7 +558,7 @@ export const applyRoutineToMonth = async (
         expression: routine.expression,
         routine_id: routine.id,
         check: false,
-        category: routine.category ?? 'etc'
+        category_id: routine.category_id ?? null
       })
     }
   }
@@ -676,13 +733,13 @@ export interface ReportMetric {
   id: number
   created_at: string
   report_id: number
-  category: SodCategory
+  category_id: CategoryId | null
   minutes: number
   rate: number
 }
 
 export interface ReportMetricInput {
-  category: SodCategory
+  category_id: CategoryId
   minutes: number
   rate: number
 }
@@ -692,7 +749,7 @@ export const getReportMetrics = async (reportId: number) => {
     .from('report_metrics')
     .select('*')
     .eq('report_id', reportId)
-    .order('category', { ascending: true })
+    .order('category_id', { ascending: true, nullsFirst: true })
 
   if (error) {
     console.error('Error fetching report metrics:', error)
@@ -722,7 +779,7 @@ export const replaceReportMetrics = async (reportId: number, metrics: ReportMetr
     .insert(
       metrics.map(metric => ({
         report_id: reportId,
-        category: metric.category,
+        category_id: metric.category_id,
         minutes: Math.round(metric.minutes),
         rate: Number(metric.rate.toFixed(2)),
       }))

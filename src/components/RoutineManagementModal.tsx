@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { 
   getRoutinesByWorkspace, 
   createRoutine, 
@@ -9,8 +9,8 @@ import {
   applyRoutineToMonth,
   removeRoutineFromMonth,
   Routine,
-  SodCategory
 } from '@/lib/supabase'
+import { useWorkspaceCategories } from '@/hooks/useWorkspaceCategories'
 
 interface RoutineManagementModalProps {
   isOpen: boolean
@@ -20,6 +20,7 @@ interface RoutineManagementModalProps {
   year: number
   month: number
   onRoutineApplied?: () => void
+  categoryRefreshKey?: number
 }
 
 export default function RoutineManagementModal({
@@ -30,19 +31,26 @@ export default function RoutineManagementModal({
   year,
   month,
   onRoutineApplied,
+  categoryRefreshKey,
 }: RoutineManagementModalProps) {
-  const CATEGORY_OPTIONS: { value: SodCategory; label: string }[] = [
-    { value: 'life', label: '생활' },
-    { value: 'work', label: '업무' },
-    { value: 'learning', label: '학습' },
-    { value: 'etc', label: '기타' },
-  ]
-  const DEFAULT_CATEGORY: SodCategory = 'etc'
-  const CATEGORY_LABELS = CATEGORY_OPTIONS.reduce<Record<SodCategory, string>>((acc, option) => {
-    acc[option.value] = option.label
-    return acc
-  }, {} as Record<SodCategory, string>)
-  const getCategoryLabel = (value?: SodCategory | null) => CATEGORY_LABELS[value ?? DEFAULT_CATEGORY]
+  const { categories, loading: categoriesLoading } = useWorkspaceCategories(workspaceId, {
+    enabled: isOpen,
+    refreshKey: categoryRefreshKey,
+  })
+  const categoryMap = useMemo(() => {
+    const map = new Map<number, string>()
+    for (const category of categories) {
+      map.set(category.id, category.summary)
+    }
+    return map
+  }, [categories])
+  const firstCategoryId = categories[0]?.id ?? null
+  const getCategoryLabel = (value?: number | null) => {
+    if (value === null || value === undefined) {
+      return '속성 없음'
+    }
+    return categoryMap.get(value) ?? '삭제된 속성'
+  }
 
   const to12Hour = (hhmm: string | null) => {
     if (!hhmm) return { hour: 12, minute: 0, ampm: 'AM' as const }
@@ -122,7 +130,7 @@ export default function RoutineManagementModal({
   const [endAmPm, setEndAmPm] = useState<'AM' | 'PM'>('PM')
   const [summary, setSummary] = useState<string>('')
   const [expression, setExpression] = useState<string>('')
-  const [category, setCategory] = useState<SodCategory>(DEFAULT_CATEGORY)
+  const [categoryId, setCategoryId] = useState<number | null>(null)
   const [selectedDays, setSelectedDays] = useState<Set<number>>(new Set())
   const [saving, setSaving] = useState(false)
 
@@ -136,7 +144,7 @@ export default function RoutineManagementModal({
   const [editEndAmPm, setEditEndAmPm] = useState<'AM' | 'PM'>('PM')
   const [editSummary, setEditSummary] = useState<string>('')
   const [editExpression, setEditExpression] = useState<string>('')
-  const [editCategory, setEditCategory] = useState<SodCategory>(DEFAULT_CATEGORY)
+  const [editCategoryId, setEditCategoryId] = useState<number | null>(null)
   const [editSelectedDays, setEditSelectedDays] = useState<Set<number>>(new Set())
 
   const weekDays = ['일', '월', '화', '수', '목', '금', '토']
@@ -147,6 +155,16 @@ export default function RoutineManagementModal({
       setShowForm(false)
     }
   }, [isOpen, workspaceId, userId])
+
+  useEffect(() => {
+    if (!isOpen) return
+    if (firstCategoryId && categoryId === null) {
+      setCategoryId(firstCategoryId)
+    }
+    if (editingId && firstCategoryId && editCategoryId === null) {
+      setEditCategoryId(firstCategoryId)
+    }
+  }, [isOpen, firstCategoryId, categoryId, editingId, editCategoryId])
 
   const fetchRoutines = async () => {
     try {
@@ -192,7 +210,7 @@ export default function RoutineManagementModal({
     setEndAmPm('PM')
     setSummary('')
     setExpression('')
-    setCategory(DEFAULT_CATEGORY)
+    setCategoryId(firstCategoryId)
     setSelectedDays(new Set())
   }
 
@@ -207,7 +225,7 @@ export default function RoutineManagementModal({
     setEndAmPm('PM')
     setSummary('')
     setExpression('')
-    setCategory(DEFAULT_CATEGORY)
+    setCategoryId(firstCategoryId)
     setSelectedDays(new Set())
   }
 
@@ -218,6 +236,10 @@ export default function RoutineManagementModal({
     }
     if (selectedDays.size === 0) {
       setError('최소 1개 이상의 요일을 선택해주세요.')
+      return
+    }
+    if (!categoryId) {
+      setError('활동 속성을 선택해주세요.')
       return
     }
 
@@ -237,7 +259,7 @@ export default function RoutineManagementModal({
         summary: summary || null,
         expression: expression || null,
         repeat_days: Array.from(selectedDays).sort((a, b) => a - b),
-        category
+        category_id: categoryId,
       })
 
       setShowForm(false)
@@ -263,7 +285,7 @@ export default function RoutineManagementModal({
     setEditEndAmPm(end12.ampm)
     setEditSummary(routine.summary ?? '')
     setEditExpression(routine.expression ?? '')
-    setEditCategory(routine.category ?? DEFAULT_CATEGORY)
+    setEditCategoryId(routine.category_id ?? firstCategoryId)
     setEditSelectedDays(new Set(routine.repeat_days))
   }
 
@@ -278,7 +300,7 @@ export default function RoutineManagementModal({
     setEditEndAmPm('PM')
     setEditSummary('')
     setEditExpression('')
-    setEditCategory(DEFAULT_CATEGORY)
+    setEditCategoryId(firstCategoryId)
     setEditSelectedDays(new Set())
   }
 
@@ -289,6 +311,10 @@ export default function RoutineManagementModal({
     }
     if (editSelectedDays.size === 0) {
       setError('최소 1개 이상의 요일을 선택해주세요.')
+      return
+    }
+    if (!editCategoryId) {
+      setError('활동 속성을 선택해주세요.')
       return
     }
 
@@ -304,7 +330,7 @@ export default function RoutineManagementModal({
         summary: editSummary || null,
         expression: editExpression || null,
         repeat_days: Array.from(editSelectedDays).sort((a, b) => a - b),
-        category: editCategory
+        category_id: editCategoryId
       })
       cancelEdit()
       await fetchRoutines()
@@ -411,6 +437,12 @@ export default function RoutineManagementModal({
               {error}
             </div>
           )}
+
+        {!categoriesLoading && categories.length === 0 && (
+          <div className="mb-4 p-3 border border-amber-200 dark:border-amber-800 rounded-md bg-amber-50 dark:bg-amber-900/20 text-sm text-amber-900 dark:text-amber-100">
+            속성이 비어있습니다. 속성 관리에서 최소 한 개 이상 등록해야 루틴을 만들 수 있어요.
+          </div>
+        )}
 
           <div className="flex justify-center mb-6">
             <button
@@ -525,15 +557,23 @@ export default function RoutineManagementModal({
                   활동 속성
                 </label>
                 <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value as SodCategory)}
-                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                  value={categoryId ?? ''}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setCategoryId(value ? Number(value) : null)
+                  }}
+                  disabled={categories.length === 0}
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:bg-zinc-50 dark:disabled:bg-zinc-900/50"
                 >
-                  {CATEGORY_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
+                  {categories.length === 0 ? (
+                    <option value="">등록된 속성이 없습니다</option>
+                  ) : (
+                    categories.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.summary}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 
@@ -547,7 +587,7 @@ export default function RoutineManagementModal({
                 </button>
                 <button
                   onClick={handleFormSave}
-                  disabled={saving}
+                  disabled={saving || categories.length === 0}
                   className="px-4 py-2 text-sm font-semibold bg-sky-600 text-white rounded-md hover:bg-sky-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {saving ? '저장 중...' : '저장'}
@@ -653,15 +693,30 @@ export default function RoutineManagementModal({
                       <div>
                         <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">활동 속성</label>
                         <select
-                          value={editCategory}
-                          onChange={(e) => setEditCategory(e.target.value as SodCategory)}
-                          className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                          value={editCategoryId ?? ''}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            setEditCategoryId(value ? Number(value) : null)
+                          }}
+                          disabled={categories.length === 0}
+                          className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:bg-zinc-50 dark:disabled:bg-zinc-900/50"
                         >
-                          {CATEGORY_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
+                          {categories.length === 0 ? (
+                            <option value="">등록된 속성이 없습니다</option>
+                          ) : (
+                            <>
+                              {categories.map((option) => (
+                                <option key={option.id} value={option.id}>
+                                  {option.summary}
+                                </option>
+                              ))}
+                              {editCategoryId && !categoryMap.has(editCategoryId) && (
+                                <option value={editCategoryId} disabled>
+                                  삭제된 속성 (ID: {editCategoryId})
+                                </option>
+                              )}
+                            </>
+                          )}
                         </select>
                       </div>
 
@@ -675,7 +730,7 @@ export default function RoutineManagementModal({
                         </button>
                         <button
                           onClick={() => saveEdit(routine.id)}
-                          disabled={saving}
+                          disabled={saving || categories.length === 0}
                           className="px-3 py-1.5 text-sm font-semibold bg-sky-600 text-white rounded-md hover:bg-sky-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {saving ? '저장 중...' : '저장'}
@@ -694,7 +749,7 @@ export default function RoutineManagementModal({
                               {formatTime(routine.start_at)} ~ {formatTime(routine.end_at)}
                             </span>
                             <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700">
-                              {getCategoryLabel(routine.category)}
+                              {getCategoryLabel(routine.category_id)}
                             </span>
                           </div>
                           <div className="flex gap-1 mb-2">

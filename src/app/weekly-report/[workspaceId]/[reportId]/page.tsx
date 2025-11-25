@@ -14,6 +14,8 @@ import {
   supabase,
   updateReport,
 } from "@/lib/supabase";
+import { useWorkspaceCategories } from "@/hooks/useWorkspaceCategories";
+import { getCategoryColor } from "@/lib/categoryColors";
 
 export default function WeeklyReportDetailPage() {
   const params = useParams<{ workspaceId: string; reportId: string }>();
@@ -138,19 +140,21 @@ export default function WeeklyReportDetailPage() {
     }
   };
 
-  const COLORS: Record<string, string> = {
-    life: "#ec4899",
-    work: "#3b82f6",
-    learning: "#22c55e",
-    etc: "#a855f7",
+  const { categories } = useWorkspaceCategories(workspaceId, { enabled: !!workspaceId });
+  const categoryMeta = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const category of categories) {
+      map.set(category.id, category.summary);
+    }
+    return map;
+  }, [categories]);
+  const getCategoryLabel = (id?: number | null) => {
+    if (id === null || id === undefined) {
+      return "속성 없음";
+    }
+    return categoryMeta.get(id) ?? `삭제된 속성 (#${id})`;
   };
-
-  const CATEGORY_LABELS: Record<string, string> = {
-    life: "생활",
-    work: "업무",
-    learning: "학습",
-    etc: "기타",
-  };
+  const getColorForCategory = (id?: number | null) => getCategoryColor(id ?? null);
 
   const computeMinutes = (sod: Sod) => {
     if (!sod.start_at || !sod.end_at) return 0;
@@ -174,22 +178,39 @@ export default function WeeklyReportDetailPage() {
         report.end_date
       );
 
-      const categories: ReportMetricInput[] = ["life", "work", "learning", "etc"].map(
-        (category) => {
-          const group = sods.filter((sod) => (sod.category ?? "etc") === category);
+      const knownCategoryIds = new Set(categories.map((category) => category.id));
+      const extraCategoryIds = new Set<number>();
+      for (const sod of sods) {
+        if (sod.category_id && !knownCategoryIds.has(sod.category_id)) {
+          extraCategoryIds.add(sod.category_id);
+        }
+      }
+
+      const categoryIdList = [
+        ...Array.from(knownCategoryIds),
+        ...Array.from(extraCategoryIds),
+      ];
+
+      if (categoryIdList.length === 0) {
+        alert("분석할 수 있는 속성이 없습니다. 먼저 속성을 추가해주세요.");
+        return;
+      }
+
+      const metricsInput = categoryIdList
+        .map((categoryId) => {
+          const group = sods.filter((sod) => sod.category_id === categoryId);
           const totalMinutes = group.reduce((sum, sod) => sum + computeMinutes(sod), 0);
           const completed = group.filter((sod) => sod.check).length;
-          const rate =
-            group.length === 0 ? 0 : Math.round((completed / group.length) * 100);
+          const rate = group.length === 0 ? 0 : Math.round((completed / group.length) * 100);
           return {
-            category: category as ReportMetricInput["category"],
+            category_id: categoryId,
             minutes: totalMinutes,
             rate,
           };
-        }
-      );
-      const filtered = categories.filter((metric) => metric.minutes > 0 || metric.rate > 0);
-      const saved = await replaceReportMetrics(report.id, filtered);
+        })
+        .filter((metric) => metric.minutes > 0 || metric.rate > 0);
+
+      const saved = await replaceReportMetrics(report.id, metricsInput);
       setMetrics(saved);
     } catch (error) {
       console.error(error);
@@ -200,18 +221,16 @@ export default function WeeklyReportDetailPage() {
   };
 
   const totalMinutes = metrics.reduce((sum, metric) => sum + metric.minutes, 0);
-  const pieSegments = metrics.reduce<{ color: string; value: number; category: string }[]>(
-    (acc, metric) => {
-      const percentage = totalMinutes === 0 ? 0 : (metric.minutes / totalMinutes) * 100;
-      acc.push({
-        color: COLORS[metric.category],
-        value: Number(percentage.toFixed(2)),
-        category: metric.category,
-      });
-      return acc;
-    },
-    []
-  );
+  const pieSegments = metrics.map((metric) => {
+    const percentage = totalMinutes === 0 ? 0 : (metric.minutes / totalMinutes) * 100;
+    return {
+      color: getColorForCategory(metric.category_id),
+      value: Number(percentage.toFixed(2)),
+      categoryId: metric.category_id,
+      label: getCategoryLabel(metric.category_id),
+      minutes: metric.minutes,
+    };
+  });
 
   const pieBackground =
     pieSegments.length === 0
@@ -566,19 +585,16 @@ export default function WeeklyReportDetailPage() {
                                 <span className="text-center">비중</span>
                               </div>
                               {pieSegments.map((segment) => (
-                                <div key={segment.category} className="grid grid-cols-3 gap-2 text-zinc-600 dark:text-zinc-300">
+                                <div key={segment.categoryId ?? "none"} className="grid grid-cols-3 gap-2 text-zinc-600 dark:text-zinc-300">
                                   <div className="flex items-center gap-2">
                                     <span
                                       className="inline-block w-2.5 h-2.5 rounded-full"
                                       style={{ backgroundColor: segment.color }}
                                     />
-                                    <span>{CATEGORY_LABELS[segment.category]}</span>
+                                    <span>{segment.label}</span>
                                   </div>
                                   <span className="text-center text-zinc-500 dark:text-zinc-400">
-                                    {formatHours(
-                                      metrics.find((m) => m.category === segment.category)?.minutes ?? 0
-                                    )}
-                                    h
+                                    {formatHours(segment.minutes)}h
                                   </span>
                                   <span className="text-right text-zinc-500 dark:text-zinc-400">
                                     {segment.value.toFixed(1)}%
@@ -600,22 +616,22 @@ export default function WeeklyReportDetailPage() {
                       </div>
                       <div className="flex items-end gap-4 h-48">
                         {metrics.map((metric) => (
-                          <div key={metric.category} className="flex-1 flex flex-col items-center gap-2">
+                          <div key={metric.id} className="flex-1 flex flex-col items-center gap-2">
                             <div className="relative w-full h-32 bg-zinc-100 dark:bg-zinc-800 rounded-lg overflow-hidden">
                               <div
                                 className="absolute bottom-0 left-0 right-0 rounded-lg"
                                 style={{
-                                  backgroundColor: COLORS[metric.category],
+                                  backgroundColor: getColorForCategory(metric.category_id),
                                   height: `${Math.min(100, Math.max(0, metric.rate))}%`,
                                 }}
                               />
                             </div>
                             <div className="text-center text-sm text-zinc-600 dark:text-zinc-300">
-                              {CATEGORY_LABELS[metric.category]}
+                              {getCategoryLabel(metric.category_id)}
                             </div>
-                              <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                                {metric.rate.toFixed(0)}%
-                              </div>
+                            <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                              {metric.rate.toFixed(0)}%
+                            </div>
                           </div>
                         ))}
                       </div>

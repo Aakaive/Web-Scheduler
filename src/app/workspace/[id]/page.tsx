@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase, getTodosByWorkspace, Todo, getRemindersByWorkspace, Reminder, getSodsByDate, Sod, updateSod, updateTodo } from '@/lib/supabase'
 import Link from 'next/link'
+import { useWorkspaceCategories } from '@/hooks/useWorkspaceCategories'
 
 interface Workspace {
   id: string
@@ -34,6 +35,21 @@ export default function WorkspacePage() {
   const [selectedDate, setSelectedDate] = useState<string>(getSeoulTodayString())
   const [sods, setSods] = useState<Sod[]>([])
   const [loadingSods, setLoadingSods] = useState(true)
+
+  const { categories } = useWorkspaceCategories(workspaceId, { enabled: !!workspaceId })
+  const categoryMap = useMemo(() => {
+    const map = new Map<number, string>()
+    for (const category of categories) {
+      map.set(category.id, category.summary)
+    }
+    return map
+  }, [categories])
+  const getCategoryLabel = (id?: number | null) => {
+    if (id === null || id === undefined) {
+      return '속성 없음'
+    }
+    return categoryMap.get(id) ?? '삭제된 속성'
+  }
 
   useEffect(() => {
     const init = async () => {
@@ -665,12 +681,7 @@ export default function WorkspacePage() {
                                   {startTime} - {endTime}
                                 </div>
                                 <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 shrink-0">
-                                  {{
-                                    life: '생활',
-                                    work: '업무',
-                                    learning: '학습',
-                                    etc: '기타',
-                                  }[sod.category ?? 'etc']}
+                                  {getCategoryLabel(sod.category_id)}
                                 </span>
                                 {sod.summary && (
                                   <h3 className={`text-base font-medium flex-1 ${

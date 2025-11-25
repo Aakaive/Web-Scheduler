@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { getSodsByDate, createSod, updateSod, deleteSod, Sod, SodCategory, getCommentByDate, createComment, updateComment, Comment } from '@/lib/supabase'
+import { useState, useEffect, useMemo } from 'react'
+import { getSodsByDate, createSod, updateSod, deleteSod, Sod, getCommentByDate, createComment, updateComment, Comment } from '@/lib/supabase'
+import { useWorkspaceCategories } from '@/hooks/useWorkspaceCategories'
 
 interface SodeodModalProps {
   isOpen: boolean
@@ -9,6 +10,7 @@ interface SodeodModalProps {
   date: Date
   workspaceId: string
   userId: string
+  categoryRefreshKey?: number
 }
 
 export default function SodeodModal({
@@ -17,19 +19,26 @@ export default function SodeodModal({
   date,
   workspaceId,
   userId,
+  categoryRefreshKey,
 }: SodeodModalProps) {
-  const CATEGORY_OPTIONS: { value: SodCategory; label: string }[] = [
-    { value: 'life', label: '생활' },
-    { value: 'work', label: '업무' },
-    { value: 'learning', label: '학습' },
-    { value: 'etc', label: '기타' },
-  ]
-  const DEFAULT_CATEGORY: SodCategory = 'etc'
-  const CATEGORY_LABELS = CATEGORY_OPTIONS.reduce<Record<SodCategory, string>>((acc, option) => {
-    acc[option.value] = option.label
-    return acc
-  }, {} as Record<SodCategory, string>)
-  const getCategoryLabel = (value?: SodCategory | null) => CATEGORY_LABELS[value ?? DEFAULT_CATEGORY]
+  const { categories, loading: categoriesLoading } = useWorkspaceCategories(workspaceId, {
+    enabled: isOpen,
+    refreshKey: categoryRefreshKey,
+  })
+  const categoryMap = useMemo(() => {
+    const map = new Map<number, string>()
+    for (const category of categories) {
+      map.set(category.id, category.summary)
+    }
+    return map
+  }, [categories])
+  const firstCategoryId = categories[0]?.id ?? null
+  const getCategoryLabel = (value?: number | null) => {
+    if (value === null || value === undefined) {
+      return '속성 없음'
+    }
+    return categoryMap.get(value) ?? '삭제된 속성'
+  }
 
   const to12Hour = (hhmm: string | null) => {
     if (!hhmm) return { hour: 12, minute: 0, ampm: 'AM' as const }
@@ -108,7 +117,7 @@ export default function SodeodModal({
   const [endAmPm, setEndAmPm] = useState<'AM' | 'PM'>('PM')
   const [summary, setSummary] = useState<string>('')
   const [expression, setExpression] = useState<string>('')
-  const [category, setCategory] = useState<SodCategory>(DEFAULT_CATEGORY)
+  const [categoryId, setCategoryId] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editStartHour, setEditStartHour] = useState<number>(9)
@@ -119,7 +128,7 @@ export default function SodeodModal({
   const [editEndAmPm, setEditEndAmPm] = useState<'AM' | 'PM'>('PM')
   const [editSummary, setEditSummary] = useState<string>('')
   const [editExpression, setEditExpression] = useState<string>('')
-  const [editCategory, setEditCategory] = useState<SodCategory>(DEFAULT_CATEGORY)
+  const [editCategoryId, setEditCategoryId] = useState<number | null>(null)
   const [copying, setCopying] = useState(false)
   const [comment, setComment] = useState<Comment | null>(null)
   const [showCommentForm, setShowCommentForm] = useState(false)
@@ -132,6 +141,16 @@ export default function SodeodModal({
     const day = String(date.getDate()).padStart(2, '0')
     return `${year}-${month}-${day}`
   })()
+
+  useEffect(() => {
+    if (!isOpen) return
+    if (firstCategoryId && categoryId === null) {
+      setCategoryId(firstCategoryId)
+    }
+    if (editingId && firstCategoryId && editCategoryId === null) {
+      setEditCategoryId(firstCategoryId)
+    }
+  }, [isOpen, firstCategoryId, categoryId, editCategoryId, editingId])
 
   useEffect(() => {
     if (isOpen) {
@@ -176,7 +195,7 @@ export default function SodeodModal({
     setEndAmPm('PM')
     setSummary('')
     setExpression('')
-    setCategory(DEFAULT_CATEGORY)
+    setCategoryId(firstCategoryId)
   }
 
   const handleFormCancel = () => {
@@ -189,10 +208,15 @@ export default function SodeodModal({
     setEndAmPm('PM')
     setSummary('')
     setExpression('')
-    setCategory(DEFAULT_CATEGORY)
+    setCategoryId(firstCategoryId)
   }
 
   const handleFormSave = async () => {
+    if (!categoryId) {
+      setError('활동 속성을 먼저 추가하고 선택해주세요.')
+      return
+    }
+
     try {
       setSaving(true)
       setError(null)
@@ -209,7 +233,7 @@ export default function SodeodModal({
         summary: summary || null,
         expression: expression || null,
         routine_id: null,
-        category,
+        category_id: categoryId,
       })
 
       setShowForm(false)
@@ -221,6 +245,7 @@ export default function SodeodModal({
       setEndAmPm('PM')
       setSummary('')
       setExpression('')
+      setCategoryId(firstCategoryId)
       
       await fetchSods()
     } catch (e) {
@@ -269,7 +294,7 @@ export default function SodeodModal({
     setEditEndAmPm(end12.ampm)
     setEditSummary(sod.summary ?? '')
     setEditExpression(sod.expression ?? '')
-    setEditCategory(sod.category ?? DEFAULT_CATEGORY)
+    setEditCategoryId(sod.category_id ?? firstCategoryId)
   }
 
   const cancelEdit = () => {
@@ -282,10 +307,15 @@ export default function SodeodModal({
     setEditEndAmPm('PM')
     setEditSummary('')
     setEditExpression('')
-    setEditCategory(DEFAULT_CATEGORY)
+    setEditCategoryId(firstCategoryId)
   }
 
   const saveEdit = async (sodId: string) => {
+    if (!editCategoryId) {
+      setError('활동 속성을 선택해주세요.')
+      return
+    }
+
     try {
       setSaving(true)
       setError(null)
@@ -296,7 +326,7 @@ export default function SodeodModal({
         end_at: endAt24,
         summary: editSummary || null,
         expression: editExpression || null,
-        category: editCategory,
+        category_id: editCategoryId,
       })
       cancelEdit()
       await fetchSods()
@@ -435,6 +465,12 @@ export default function SodeodModal({
             </div>
           )}
 
+        {!categoriesLoading && categories.length === 0 && (
+          <div className="mb-4 p-3 border border-amber-200 dark:border-amber-800 rounded-md bg-amber-50 dark:bg-amber-900/20 text-sm text-amber-900 dark:text-amber-100">
+            아직 등록된 속성이 없습니다. 속성 관리에서 속성을 추가한 뒤 SoD를 작성할 수 있어요.
+          </div>
+        )}
+
           <div className="flex justify-center mb-6">
             <button
               onClick={handleAddClick}
@@ -510,15 +546,23 @@ export default function SodeodModal({
                   활동 속성
                 </label>
                 <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value as SodCategory)}
-                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                  value={categoryId ?? ''}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setCategoryId(value ? Number(value) : null)
+                  }}
+                  disabled={categories.length === 0}
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:bg-zinc-50 dark:disabled:bg-zinc-900/50"
                 >
-                  {CATEGORY_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
+                  {categories.length === 0 ? (
+                    <option value="">등록된 속성이 없습니다</option>
+                  ) : (
+                    categories.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.summary}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 
@@ -532,7 +576,7 @@ export default function SodeodModal({
                 </button>
                 <button
                   onClick={handleFormSave}
-                  disabled={saving}
+                  disabled={saving || categories.length === 0}
                   className="px-4 py-2 text-sm font-semibold bg-sky-600 text-white rounded-md hover:bg-sky-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {saving ? '저장 중...' : '저장'}
@@ -621,15 +665,31 @@ export default function SodeodModal({
                           <div>
                             <label className="block text-xs text-zinc-500 dark:text-zinc-400 mb-1">활동 속성</label>
                             <select
-                              value={editCategory}
-                              onChange={(e) => setEditCategory(e.target.value as SodCategory)}
-                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                              value={editCategoryId ?? ''}
+                              onChange={(e) => {
+                                const value = e.target.value
+                                setEditCategoryId(value ? Number(value) : null)
+                              }}
+                              disabled={categories.length === 0}
+                              className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:bg-zinc-50 dark:disabled:bg-zinc-900/50"
                             >
-                              {CATEGORY_OPTIONS.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
+                              {categories.length === 0 ? (
+                                <option value="">등록된 속성이 없습니다</option>
+                              ) : (
+                                <>
+                                  {categories.map((option) => (
+                                    <option key={option.id} value={option.id}>
+                                      {option.summary}
+                                    </option>
+                                  ))}
+                                  {editCategoryId &&
+                                    !categoryMap.has(editCategoryId) && (
+                                      <option value={editCategoryId} disabled>
+                                        삭제된 속성 (ID: {editCategoryId})
+                                      </option>
+                                    )}
+                                </>
+                              )}
                             </select>
                           </div>
                           <div className="flex gap-2 justify-end">
@@ -656,7 +716,7 @@ export default function SodeodModal({
                               {formatTime(sod.start_at)} ~ {formatTime(sod.end_at)}
                             </div>
                             <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700">
-                              {getCategoryLabel(sod.category)}
+                              {getCategoryLabel(sod.category_id)}
                             </span>
                           </div>
                           {sod.summary && (

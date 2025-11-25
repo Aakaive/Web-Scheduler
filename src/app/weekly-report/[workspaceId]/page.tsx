@@ -5,6 +5,8 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import WeeklyReportCreateModal from "@/components/WeeklyReportCreateModal";
 import { Report, ReportMetric, getReportMetrics, getReportsByMonth, supabase } from "@/lib/supabase";
+import { useWorkspaceCategories } from "@/hooks/useWorkspaceCategories";
+import { getCategoryColor } from "@/lib/categoryColors";
 
 const years = Array.from({ length: 5 }, (_, idx) => new Date().getFullYear() - 2 + idx);
 const months = Array.from({ length: 12 }, (_, idx) => idx + 1);
@@ -18,20 +20,6 @@ const formatReportLabel = (report: Report) => {
   const year = new Date(report.start_date).getFullYear();
   const month = new Date(report.start_date).getMonth() + 1;
   return `${year}년 ${month}월 ${report.week_number}주차`;
-};
-
-const CATEGORY_LABELS: Record<string, string> = {
-  life: "생활",
-  work: "업무",
-  learning: "학습",
-  etc: "기타",
-};
-
-const COLORS: Record<string, string> = {
-  life: "#ec4899",
-  work: "#3b82f6",
-  learning: "#22c55e",
-  etc: "#a855f7",
 };
 
 const formatHours = (minutes: number) => (minutes / 60).toFixed(1);
@@ -57,6 +45,21 @@ export default function WeeklyReportPage() {
     const parsed = param ? Number(param) : null;
     return parsed && !Number.isNaN(parsed) ? parsed : null;
   });
+  const { categories } = useWorkspaceCategories(workspaceId, { enabled: !!workspaceId });
+  const categoryMeta = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const category of categories) {
+      map.set(category.id, category.summary);
+    }
+    return map;
+  }, [categories]);
+  const getCategoryLabel = (id?: number | null) => {
+    if (id === null || id === undefined) {
+      return "속성 없음";
+    }
+    return categoryMeta.get(id) ?? `삭제된 속성 (#${id})`;
+  };
+  const getColorForCategory = (id?: number | null) => getCategoryColor(id ?? null);
 
   useEffect(() => {
     const initUser = async () => {
@@ -156,11 +159,12 @@ export default function WeeklyReportPage() {
       const start = offset;
       offset += value;
       return {
-        color: COLORS[metric.category],
+        color: getColorForCategory(metric.category_id),
         value,
         start,
         end: start + value,
-        category: metric.category,
+        categoryId: metric.category_id,
+        label: getCategoryLabel(metric.category_id),
       };
     });
   };
@@ -454,7 +458,7 @@ export default function WeeklyReportPage() {
                                             </div>
                                             {metrics.map((metric) => {
                                               const segment = pieSegments.find(
-                                                (item) => item.category === metric.category
+                                                (item) => item.categoryId === metric.category_id
                                               );
                                               return (
                                                 <div
@@ -464,9 +468,9 @@ export default function WeeklyReportPage() {
                                                   <div className="flex items-center gap-2">
                                                     <span
                                                       className="inline-block w-2 h-2 rounded-full"
-                                                      style={{ backgroundColor: COLORS[metric.category] }}
+                                                      style={{ backgroundColor: getColorForCategory(metric.category_id) }}
                                                     />
-                                                    <span>{CATEGORY_LABELS[metric.category]}</span>
+                                                    <span>{getCategoryLabel(metric.category_id)}</span>
                                                   </div>
                                                   <span className="text-center text-zinc-500 dark:text-zinc-400">
                                                     {formatHours(metric.minutes)}h
@@ -497,7 +501,7 @@ export default function WeeklyReportPage() {
                                                 <div
                                                   className="absolute bottom-0 left-0 right-0 rounded-lg"
                                                   style={{
-                                                    backgroundColor: COLORS[metric.category],
+                                                    backgroundColor: getColorForCategory(metric.category_id),
                                                     height: `${Math.min(100, Math.max(0, metric.rate))}%`,
                                                   }}
                                                 />
@@ -506,7 +510,7 @@ export default function WeeklyReportPage() {
                                                 {metric.rate.toFixed(0)}%
                                               </span>
                                               <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                                                {CATEGORY_LABELS[metric.category]}
+                                                {getCategoryLabel(metric.category_id)}
                                               </span>
                                             </div>
                                           ))}

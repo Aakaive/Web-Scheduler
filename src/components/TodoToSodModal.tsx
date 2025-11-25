@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { createSodFromTodo, SodCategory } from '@/lib/supabase'
+import { useEffect, useState } from 'react'
+import { createSodFromTodo } from '@/lib/supabase'
+import { useWorkspaceCategories } from '@/hooks/useWorkspaceCategories'
 
 interface TodoToSodModalProps {
   isOpen: boolean
@@ -39,13 +40,19 @@ export default function TodoToSodModal({
   const [includeEndTime, setIncludeEndTime] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const CATEGORY_OPTIONS: { value: SodCategory; label: string }[] = [
-    { value: 'life', label: '생활' },
-    { value: 'work', label: '업무' },
-    { value: 'learning', label: '학습' },
-    { value: 'etc', label: '기타' },
-  ]
-  const [category, setCategory] = useState<SodCategory>('etc')
+  const { categories, loading: categoriesLoading } = useWorkspaceCategories(workspaceId, {
+    enabled: isOpen,
+  })
+  const [categoryId, setCategoryId] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!isOpen) return
+    if (categories.length > 0) {
+      setCategoryId((prev) => prev ?? categories[0].id)
+    } else {
+      setCategoryId(null)
+    }
+  }, [categories, isOpen])
 
   const to24Hour = (hour: number, minute: number, ampm: 'AM' | 'PM'): string => {
     let h24 = hour
@@ -61,6 +68,12 @@ export default function TodoToSodModal({
     setIsSubmitting(true)
     setError(null)
 
+    if (!categoryId) {
+      setError('활동 속성을 선택해주세요.')
+      setIsSubmitting(false)
+      return
+    }
+
     try {
       const startAt = to24Hour(startHour, startMinute, startAmPm)
       const endAt = includeEndTime ? to24Hour(endHour, endMinute, endAmPm) : null
@@ -72,10 +85,10 @@ export default function TodoToSodModal({
         date,
         startAt,
         endAt,
-        category
+        categoryId
       )
 
-      setCategory('etc')
+      setCategoryId(categories[0]?.id ?? null)
       onSuccess()
       onClose()
     } catch (err) {
@@ -88,7 +101,7 @@ export default function TodoToSodModal({
   const handleClose = () => {
     if (!isSubmitting) {
       setError(null)
-      setCategory('etc')
+      setCategoryId(categories[0]?.id ?? null)
       onClose()
     }
   }
@@ -113,6 +126,11 @@ export default function TodoToSodModal({
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {!categoriesLoading && categories.length === 0 && (
+              <div className="text-sm text-amber-900 dark:text-amber-100 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md px-3 py-2">
+                속성이 비어있습니다. 속성 관리에서 속성을 추가한 뒤 다시 시도해주세요.
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                 날짜 *
@@ -219,16 +237,23 @@ export default function TodoToSodModal({
                 활동 속성 *
               </label>
               <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value as SodCategory)}
-                disabled={isSubmitting}
-                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                value={categoryId ?? ''}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setCategoryId(value ? Number(value) : null)
+                }}
+                disabled={isSubmitting || categories.length === 0}
+                className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:bg-zinc-50 dark:disabled:bg-zinc-900/50"
               >
-                {CATEGORY_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
+                {categories.length === 0 ? (
+                  <option value="">등록된 속성이 없습니다</option>
+                ) : (
+                  categories.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.summary}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
@@ -250,7 +275,7 @@ export default function TodoToSodModal({
               <button
                 type="submit"
                 className="px-4 py-2 text-sm font-semibold bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isSubmitting}
+                disabled={isSubmitting || categories.length === 0}
               >
                 {isSubmitting ? '추가 중...' : 'SOD에 추가'}
               </button>

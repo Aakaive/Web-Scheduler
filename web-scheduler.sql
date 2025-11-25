@@ -40,6 +40,14 @@ CREATE TABLE public.routines (
   CONSTRAINT routines_workspace_id_fkey FOREIGN KEY (workspace_id) REFERENCES public.workspaces(id),
   CONSTRAINT routines_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
 );
+CREATE TABLE public.categories (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  workspace_id bigint NOT NULL,
+  summary text NOT NULL,
+  CONSTRAINT categories_pkey PRIMARY KEY (id),
+  CONSTRAINT categories_workspace_id_fkey FOREIGN KEY (workspace_id) REFERENCES public.workspaces(id)
+);
 CREATE TABLE public.sods (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
@@ -52,10 +60,12 @@ CREATE TABLE public.sods (
   user_id uuid NOT NULL,
   end_at time without time zone,
   routine_id uuid,
+  category_id bigint,
   CONSTRAINT sods_pkey PRIMARY KEY (id),
   CONSTRAINT sods_workspace_id_fkey FOREIGN KEY (workspace_id) REFERENCES public.workspaces(id),
   CONSTRAINT sods_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
-  CONSTRAINT sods_routine_id_fkey FOREIGN KEY (routine_id) REFERENCES public.routines(id)
+  CONSTRAINT sods_routine_id_fkey FOREIGN KEY (routine_id) REFERENCES public.routines(id),
+  CONSTRAINT sods_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.categories(id)
 );
 CREATE TABLE public.todos (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -93,4 +103,30 @@ CREATE TABLE public.workspaces (
   title text DEFAULT '빈 워크스페이스'::text,
   CONSTRAINT workspaces_pkey PRIMARY KEY (id),
   CONSTRAINT workspaces_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.reports (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  workspace_id bigint NOT NULL,
+  user_id uuid NOT NULL,
+  start_date date NOT NULL,
+  end_date date NOT NULL,
+  week_number integer NOT NULL,
+  kpt_keep text,
+  kpt_problem text,
+  kpt_try text,
+  CONSTRAINT reports_pkey PRIMARY KEY (id),
+  CONSTRAINT reports_workspace_id_fkey FOREIGN KEY (workspace_id) REFERENCES public.workspaces(id),
+  CONSTRAINT reports_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+CREATE TABLE public.report_metrics (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  report_id bigint NOT NULL,
+  category_id bigint,
+  minutes integer NOT NULL,
+  rate numeric NOT NULL,
+  CONSTRAINT report_metrics_pkey PRIMARY KEY (id),
+  CONSTRAINT report_metrics_report_id_fkey FOREIGN KEY (report_id) REFERENCES public.reports(id),
+  CONSTRAINT report_metrics_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.categories(id)
 );
