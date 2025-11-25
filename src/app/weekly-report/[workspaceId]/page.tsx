@@ -768,16 +768,12 @@ export default function WeeklyReportPage() {
                           </button>
                           {isExpanded && (
                             <div className="border-t border-zinc-100 dark:border-zinc-800 px-4 py-4 space-y-4">
-                              <div className="flex justify-end">
+                              <div className="flex items-center justify-end">
                                 <button
-                                  onClick={() => handleDeleteReport(report)}
-                                  disabled={deletingReportId === report.id}
-                                  className="inline-flex items-center gap-1 rounded-md border border-red-200 dark:border-red-900 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+                                  onClick={() => router.push(`/weekly-report/${workspaceId}/${report.id}`)}
+                                  className="px-4 py-2 text-sm font-semibold text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300"
                                 >
-                                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                  {deletingReportId === report.id ? "삭제 중..." : "레포트 삭제"}
+                                  레포트 작성/수정 →
                                 </button>
                               </div>
                               {metricsLoadingId === report.id ? (
@@ -912,17 +908,6 @@ export default function WeeklyReportPage() {
                                               const prevWeekMap = new Map(previousWeekMetrics.map(m => [m.category_id, m]));
                                               const prevMonthMap = new Map(previousMonthMetrics.map(m => [m.category_id, m]));
 
-                                              // 최대 시간 계산 (스케일링용)
-                                              const maxMinutesValues = Array.from(allCategoryIds).map(catId => {
-                                                const current = currentMap.get(catId)?.minutes || 0;
-                                                const prevWeek = prevWeekMap.get(catId)?.minutes || 0;
-                                                const prevMonth = prevMonthMap.get(catId)?.minutes || 0;
-                                                return Math.max(current, prevWeek, prevMonth / previousMonthWeekCount);
-                                              });
-                                              const maxMinutes = maxMinutesValues.length > 0 
-                                                ? Math.max(...maxMinutesValues, 1)
-                                                : 1;
-
                                               return Array.from(allCategoryIds).map(categoryId => {
                                                 const current = currentMap.get(categoryId);
                                                 const prevWeek = prevWeekMap.get(categoryId);
@@ -948,10 +933,9 @@ export default function WeeklyReportPage() {
                                                   : categoryColor;
 
                                                 const maxValue = Math.max(
-                                                  currentMinutes, 
-                                                  prevWeekMinutes, 
-                                                  prevMonthWeeklyAvg, 
-                                                  maxMinutes * 0.1,
+                                                  currentMinutes,
+                                                  prevWeekMinutes,
+                                                  prevMonthWeeklyAvg,
                                                   1
                                                 );
 
@@ -1238,12 +1222,16 @@ export default function WeeklyReportPage() {
                                 );
                               })()}
 
-                              <div className="flex items-center justify-end">
+                              <div className="flex justify-end">
                                 <button
-                                  onClick={() => router.push(`/weekly-report/${workspaceId}/${report.id}`)}
-                                  className="px-4 py-2 text-sm font-semibold text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300"
+                                  onClick={() => handleDeleteReport(report)}
+                                  disabled={deletingReportId === report.id}
+                                  className="inline-flex items-center gap-1 rounded-md border border-red-200 dark:border-red-900 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
                                 >
-                                  레포트 작성/수정 →
+                                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                  {deletingReportId === report.id ? "삭제 중..." : "레포트 삭제"}
                                 </button>
                               </div>
                             </div>
