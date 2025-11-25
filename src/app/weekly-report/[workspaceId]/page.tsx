@@ -7,6 +7,7 @@ import WeeklyReportCreateModal from "@/components/WeeklyReportCreateModal";
 import {
   Report,
   ReportMetric,
+  Comment,
   getReportById,
   getReportMetrics,
   getReportsByMonth,
@@ -15,6 +16,7 @@ import {
   getPreviousMonthReport,
   getPreviousMonthReportsWithWeekCount,
   getAggregatedMetricsFromReports,
+  getCommentsByDateRange,
 } from "@/lib/supabase";
 import { useWorkspaceCategories } from "@/hooks/useWorkspaceCategories";
 import { getCategoryColor } from "@/lib/categoryColors";
@@ -70,6 +72,7 @@ export default function WeeklyReportPage() {
   const [previousMonthMetricsMap, setPreviousMonthMetricsMap] = useState<Record<number, Array<{ category_id: number | null; minutes: number; rate: number }>>>({});
   const [previousMonthWeekCountMap, setPreviousMonthWeekCountMap] = useState<Record<number, number>>({});
   const [comparisonLoadingMap, setComparisonLoadingMap] = useState<Record<number, boolean>>({});
+  const [commentsMap, setCommentsMap] = useState<Record<number, Comment[]>>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pendingInitialExpandId, setPendingInitialExpandId] = useState<number | null>(() => {
     const param = searchParams?.get("reportId");
@@ -217,8 +220,23 @@ export default function WeeklyReportPage() {
         }
       }
 
-      // 비교 데이터 로드
+      // 회고문 로드
       const report = reports.find(r => r.id === targetId);
+      if (report && !commentsMap[targetId]) {
+        try {
+          const comments = await getCommentsByDateRange(
+            workspaceId,
+            report.start_date,
+            report.end_date
+          );
+          setCommentsMap(prev => ({ ...prev, [targetId]: comments }));
+        } catch (error) {
+          console.error("Error loading comments:", error);
+          setCommentsMap(prev => ({ ...prev, [targetId]: [] }));
+        }
+      }
+
+      // 비교 데이터 로드
       if (report && userId && !previousWeekMetricsMap[targetId] && !comparisonLoadingMap[targetId]) {
         try {
           setComparisonLoadingMap(prev => ({ ...prev, [targetId]: true }));
@@ -323,8 +341,23 @@ export default function WeeklyReportPage() {
         }
       }
 
-      // 비교 데이터 로드
+      // 회고문 로드
       const report = reports.find(r => r.id === reportId);
+      if (report && !commentsMap[reportId]) {
+        try {
+          const comments = await getCommentsByDateRange(
+            workspaceId,
+            report.start_date,
+            report.end_date
+          );
+          setCommentsMap(prev => ({ ...prev, [reportId]: comments }));
+        } catch (error) {
+          console.error("Error loading comments:", error);
+          setCommentsMap(prev => ({ ...prev, [reportId]: [] }));
+        }
+      }
+
+      // 비교 데이터 로드
       if (report && userId && !previousWeekMetricsMap[reportId] && !comparisonLoadingMap[reportId]) {
         try {
           setComparisonLoadingMap(prev => ({ ...prev, [reportId]: true }));
@@ -1050,6 +1083,50 @@ export default function WeeklyReportPage() {
                                   {report.kpt_try || "작성된 내용이 없습니다."}
                                 </p>
                               </div>
+
+                              {/* 회고문 섹션 */}
+                              {(() => {
+                                const comments = commentsMap[report.id] || [];
+                                if (comments.length === 0) return null;
+
+                                const getDayOfWeek = (dateStr: string) => {
+                                  const date = new Date(dateStr);
+                                  const days = ['일', '월', '화', '수', '목', '금', '토'];
+                                  return days[date.getDay()];
+                                };
+
+                                const formatCommentDate = (dateStr: string) => {
+                                  const date = new Date(dateStr);
+                                  const month = date.getMonth() + 1;
+                                  const day = date.getDate();
+                                  const dayOfWeek = getDayOfWeek(dateStr);
+                                  return `${month}/${day} (${dayOfWeek})`;
+                                };
+
+                                return (
+                                  <div className="space-y-3">
+                                    <h4 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-2">
+                                      회고문
+                                    </h4>
+                                    <div className="space-y-4">
+                                      {comments.map((comment) => (
+                                        <div
+                                          key={comment.id}
+                                          className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 space-y-2"
+                                        >
+                                          <div className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                                            {formatCommentDate(comment.date)}
+                                          </div>
+                                          <p className="text-sm text-zinc-900 dark:text-zinc-100 whitespace-pre-wrap">
+                                            {comment.expression}
+                                          </p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+
                               <div className="flex items-center justify-end">
                                 <button
                                   onClick={() => router.push(`/weekly-report/${workspaceId}/${report.id}`)}

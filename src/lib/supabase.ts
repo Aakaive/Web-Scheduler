@@ -665,6 +665,27 @@ export const updateComment = async (commentId: string, workspaceId: string, expr
   return data as Comment
 }
 
+export const getCommentsByDateRange = async (
+  workspaceId: string,
+  startDate: string,
+  endDate: string
+) => {
+  const { data, error } = await supabase
+    .from('comments')
+    .select('*')
+    .eq('workspace_id', workspaceId)
+    .gte('date', startDate)
+    .lte('date', endDate)
+    .order('date', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching comments by date range:', error)
+    throw error
+  }
+
+  return (data || []) as Comment[]
+}
+
 export interface Report {
   id: number
   created_at: string

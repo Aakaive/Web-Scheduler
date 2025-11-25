@@ -7,6 +7,7 @@ import {
   ReportMetric,
   ReportMetricInput,
   Sod,
+  Comment,
   getReportById,
   getReportMetrics,
   getSodsInRange,
@@ -17,6 +18,7 @@ import {
   getPreviousMonthReport,
   getPreviousMonthReportsWithWeekCount,
   getAggregatedMetricsFromReports,
+  getCommentsByDateRange,
 } from "@/lib/supabase";
 import { useWorkspaceCategories } from "@/hooks/useWorkspaceCategories";
 import { getCategoryColor } from "@/lib/categoryColors";
@@ -44,6 +46,7 @@ export default function WeeklyReportDetailPage() {
   const [previousMonthMetrics, setPreviousMonthMetrics] = useState<Array<{ category_id: number | null; minutes: number; rate: number }>>([]);
   const [previousMonthWeekCount, setPreviousMonthWeekCount] = useState(1);
   const [comparisonLoading, setComparisonLoading] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
 
   const weekLabel = useMemo(() => {
     if (!report) return "";
@@ -157,6 +160,26 @@ export default function WeeklyReportDetailPage() {
     
     loadComparisonData();
   }, [report, userId, workspaceId]);
+
+  useEffect(() => {
+    const loadComments = async () => {
+      if (!report || !workspaceId) return;
+      
+      try {
+        const data = await getCommentsByDateRange(
+          workspaceId,
+          report.start_date,
+          report.end_date
+        );
+        setComments(data);
+      } catch (error) {
+        console.error("Error loading comments:", error);
+        setComments([]);
+      }
+    };
+    
+    loadComments();
+  }, [report, workspaceId]);
 
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -1072,6 +1095,46 @@ export default function WeeklyReportDetailPage() {
                     />
                   </label>
                 </div>
+
+                {/* 회고문 섹션 */}
+                {comments.length > 0 && (
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold text-zinc-700 dark:text-zinc-200">
+                      회고문
+                    </h4>
+                    <div className="space-y-4">
+                      {comments.map((comment) => {
+                        const getDayOfWeek = (dateStr: string) => {
+                          const date = new Date(dateStr);
+                          const days = ['일', '월', '화', '수', '목', '금', '토'];
+                          return days[date.getDay()];
+                        };
+
+                        const formatCommentDate = (dateStr: string) => {
+                          const date = new Date(dateStr);
+                          const month = date.getMonth() + 1;
+                          const day = date.getDate();
+                          const dayOfWeek = getDayOfWeek(dateStr);
+                          return `${month}월 ${day}일 (${dayOfWeek})`;
+                        };
+
+                        return (
+                          <div
+                            key={comment.id}
+                            className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-4 space-y-2"
+                          >
+                            <div className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                              {formatCommentDate(comment.date)}
+                            </div>
+                            <p className="text-sm text-zinc-900 dark:text-zinc-100 whitespace-pre-wrap">
+                              {comment.expression}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-end gap-3 pt-2">
                   <button
