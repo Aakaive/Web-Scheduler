@@ -177,8 +177,8 @@ export default function CategoryManagementModal({
                       key={category.id}
                       className="flex flex-col sm:flex-row gap-3 items-start sm:items-center rounded-lg border border-zinc-200 dark:border-zinc-800 p-3"
                     >
-                      <div className="flex-1 w-full">
-                        <label className="text-xs text-zinc-500 dark:text-zinc-400">
+                      <div className="flex-1 w-full sm:flex sm:items-center sm:gap-3">
+                        <label className="block text-xs text-zinc-500 dark:text-zinc-400 sm:w-24 sm:shrink-0 sm:mb-0">
                           태그 이름
                         </label>
                         <input
@@ -190,7 +190,7 @@ export default function CategoryManagementModal({
                               [category.id]: e.target.value,
                             }))
                           }
-                          className="mt-1 w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                          className="mt-1 sm:mt-0 flex-1 w-full rounded-lg border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                           disabled={savingId === category.id}
                         />
                       </div>
